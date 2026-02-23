@@ -42,6 +42,7 @@ function statusBadge(status) {
     const map = {
         'Open': 'badge--sp-open',
         'Quote Submitted': 'badge--sp-submitted',
+        'Selected': 'badge--sp-selected',
         'Closed': 'badge--sp-closed',
         'Expired': 'badge--sp-expired',
     };

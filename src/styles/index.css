@@ -2103,6 +2103,12 @@ textarea {
   border: 1px solid var(--red-100);
 }
 
+.badge--sp-selected {
+  background: #F0FDF4;
+  color: #16A34A;
+  border: 1px solid #BBF7D0;
+}
+
 /* RFQ Banner on Submit Quote */
 .sq-rfq-banner {
   background: linear-gradient(135deg, var(--purple-50) 0%, #F0FDF4 100%);

@@ -85,6 +85,7 @@ Internal View (Enjen AI)
 | SP-REQ-001 | The RFQ Listing page shall display all RFQs where the logged-in supplier is mentioned. | Must Have |
 | SP-REQ-002 | The listing design shall follow the standard Enjen listing screen pattern: search box, column selector, no primary CTA. | Must Have |
 | SP-REQ-003 | Columns displayed: RFQ Number, Issue Date, Due Date, Special Instructions, Approx Value, Status, Payment Terms. | Must Have |
+| SP-REQ-020 | Statuses supported: **Open**, **Quote Submitted**, **Selected**, **Closed**, **Expired**. | Must Have |
 
 #### 4.1.2 Acceptance Criteria
 
@@ -107,6 +108,8 @@ Internal View (Enjen AI)
 | SP-REQ-004 | The RFQ Details view shall reuse the existing RFQ Details page implementation (read-only). | Must Have |
 | SP-REQ-005 | A **"Submit Quote"** CTA shall be available at the bottom-right of the RFQ Details view. | Must Have |
 | SP-REQ-006 | Clicking "Submit Quote" opens the Quote Submission Side-Panel. | Must Have |
+| SP-REQ-021 | If the RFQ status is **"Quote Submitted"** or **"Selected"**, the CTA shall change to **"View Quote"**. | Must Have |
+| SP-REQ-022 | Clicking "View Quote" shall open a read-only view of the supplier's submitted values. | Must Have |
 
 #### 4.2.2 Acceptance Criteria
 
@@ -168,6 +171,29 @@ Internal View (Enjen AI)
 - [ ] Expanding a supplier row accurately reflects all data submitted by that supplier.
 - [ ] Late Delivery Charges and Payment Terms are sourced from the RFQ, not the quote.
 - [ ] No edit or selection actions are available to the customer on this screen.
+
+---
+
+### US-SP-05: View Submitted Quote — Supplier View
+
+**As a** Supplier,  
+**I want to** review the quote I have submitted for a specific RFQ,  
+**So that** I can verify the details and terms I have committed to.
+
+#### 4.5.1 Requirements
+
+| ID | Requirement | Priority |
+|---|---|---|
+| SP-REQ-023 | The View Quote panel shall display all fields submitted during the "Submit Quote" process in a read-only format. | Must Have |
+| SP-REQ-024 | The panel shall include a waterfall summary reflecting the finalized totals (Gross, Discount, Tax, Shipping, Grand Total). | Must Have |
+| SP-REQ-025 | If the supplier's quote is selected by the customer, the status in this view shall be shown as **"Selected"** in green. | Must Have |
+
+#### 4.5.2 Acceptance Criteria
+
+- [ ] All submitted fields (prices, lead times, dates, notes) are visible.
+- [ ] Calculations in the waterfall matches the submission-time calculations.
+- [ ] Detailed Terms & Conditions are displayed.
+- [ ] Status badge clearly indicates if the quote is "Submitted" or "Selected".
 
 ---
 
@@ -236,7 +262,7 @@ grand_total       = subtotal + shipping_cost + tax_amount
 | # | Question | Owner | Status |
 |---|---|---|---|
 | OQ-1 | Should a supplier be allowed to re-submit (update) a quote after initial submission, or is the first submission final? | Business | **Closed**: First submission is final for v0. |
-| OQ-2 | Does the customer need any action on the "View Quotes" screen (e.g., "Accept Quote" / "Award to Supplier") in this version? | Product | **Closed**: No actions; read-only comparison for v0. |
+| OQ-2 | Does the customer need any action on the "View Quotes" screen (e.g., "Accept Quote" / "Award to Supplier") in this version? | Product | **Closed**: In this version, the customer makes the selection internally. If the logged-in supplier is selected, the status changes to **"Selected"**; otherwise, if another supplier is chosen, the RFQ status for this supplier changes to **"Closed"**. |
 | OQ-3 | How is the Tax Selection field populated — fixed list of tax types, or configurable? | Business | **Closed**: Fixed list of tax types. |
 
 ---

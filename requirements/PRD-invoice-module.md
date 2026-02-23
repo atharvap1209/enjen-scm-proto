@@ -16,9 +16,10 @@
 3. [Module Architecture Summary](#3-module-architecture-summary)
 4. [User Stories & Requirements](#4-user-stories--requirements)
    - [US-INV-01: Create Invoice — Details Validation](#us-inv-01-create-invoice--details-validation)
-   - [US-INV-02: Material Selection — Grouping via Coil Accordions](#us-inv-02-material-selection--grouping-via-coil-accordions)
-   - [US-INV-03: Material Selection — Per Piece vs. Per MT Pricing Toggle](#us-inv-03-material-selection--per-piece-vs-per-mt-pricing-toggle)
-   - [US-INV-04: Material Selection — Leftover Coil Sales](#us-inv-04-material-selection--leftover-coil-sales)
+   - [US-INV-02: Material Selection — Grid & Details View](#us-inv-02-material-selection--grid--details-view)
+   - [US-INV-03: Material Selection — Flat Parts List & Mandatory Details](#us-inv-03-material-selection--flat-parts-list--mandatory-details)
+   - [US-INV-04: Material Selection — Pricing by Weight (Per MT) Only](#us-inv-04-material-selection--pricing-by-weight-per-mt-only)
+   - [US-INV-04B: Material Selection — Leftover Coil Sales](#us-inv-04b-material-selection--leftover-coil-sales)
    - [US-INV-05: Calculations — Charges & Taxes](#us-inv-05-calculations--charges--taxes)
    - [US-INV-06: Payment and Terms](#us-inv-06-payment-and-terms)
    - [US-INV-07: Review & Issue Invoice](#us-inv-07-review--issue-invoice)
@@ -58,8 +59,8 @@ Invoice Creation (5-Step Wizard)
  ├── Step 1: Invoice Details (Header, Logistics, Addressing)
  ├── Step 2: Coil Selection (Searchable grid, column filtering, lazy load)
  ├── Step 3: Material Selection (Parts from selected Coils)
- │    ├── Grouped by Coil (Accordion format to prevent decision fatigue)
- │    ├── Part Selection (Explicit radio toggle for "Per Piece" vs "Per MT" pricing)
+ │    ├── Selected Coils Detail Grid (Grade, Thickness, Width, Surface, Coating, Current Weight)
+ │    ├── Flat Parts Selection Table (No accordions to reduce clutter)
  │    └── Leftover Coil weight sale
  ├── Step 4: Charges and Tax
  │    ├── Extradited charges (transport, packing)
@@ -123,54 +124,54 @@ Invoice Lifecycle
 
 ---
 
-### US-INV-03: Material Selection — Grouping via Coil Accordions
+### US-INV-03: Material Selection — Flat Parts List & Mandatory Details
 
 **As a** Billing Admin,  
-**I want to** see available parts neatly grouped by their source coil (that I just selected),  
-**So that** I don't suffer decision fatigue while locating specific items to invoice.
+**I want to** review selected parent coils in a clear grid summary and see all their available parts in a sleek flat table below,  
+**So that** I don't see cluttered accordions while entering prices, but still maintain extreme clarity over which cut belongs to which parent coil.
 
 #### 4.3.1 Requirements
 
 | ID | Requirement | Priority |
 |---|---|---|
-| INV-REQ-010 | The Material Selection interface (Step 3) shall display **Collapsible Accordions** strictly for the coils selected in Step 2. | Must Have |
-| INV-REQ-011 | The Accordion Header shall display key coil attributes (Coil No., Thickness, Width, Coating, Surface, and Grade) to allow for quick identification. | Must Have |
-| INV-REQ-012 | Expanding a Coil accordion reveals a table of parts with columns: Checkbox (Select All), Part Name, Item Type (from WO), Width, Length (for sheets), Number of Pieces, and Weight. | Must Have |
-| INV-REQ-013 | Accordions default to expanded if only one coil was selected. Default to collapsed if multiple coils exist to reduce visual clutter. | Should Have |
-| INV-REQ-014 | Provide a "Select All" checkbox at the top of an expanded Coil table to select all parts from that coil simultaneously. | Should Have |
+| INV-REQ-010 | The Material Selection interface (Step 3) shall display a **Selected Coils** top grid providing a summary of parent coils, explicitly showing: Grade, Thickness, Width, Surface, Coating, Current Weight. | Must Have |
+| INV-REQ-011 | Beneath the Selected Coils Grid, a single flat table shall list all child parts belonging to selected coils. | Must Have |
+| INV-REQ-012 | **Sheet-based parts** (Cutting, Slit+Cut) shall mandatorily display: Part Name, Width, Length, Weight. | Must Have |
+| INV-REQ-013 | **Slit-based parts** (Slitting) shall mandatorily display: Part Name, Width, Weight. | Must Have |
+| INV-REQ-014 | **Leftover Coil** parts shall mandatorily display: Part Name, Width, Weight. | Must Have |
+| INV-REQ-014B | The Parts List must group or display a 'Coil No.' column natively to allow users to quickly identify parent relations. No accordions will be utilized for this feature. | Must Have |
 
 #### 4.3.2 Acceptance Criteria
 
-- [ ] Step 3 only shows data for the parents isolated in Step 2.
-- [ ] Material list does not flood the screen. Coils elegantly encapsulate their respective parts.
-- [ ] The Accordion Header displays key coil attributes (Coil No., Thickness, Width, Coating, Surface, and Grade) to facilitate rapid identification.
+- [ ] All parent coil details are neatly stored in a separate data grid, removing vertical height from the pricing configurations.
+- [ ] Sheet-based, slit-based, and leftover parts map to their appropriate dimension fields.
+- [ ] No accordions exist on the screen to prevent click fatigue.
 
 ---
 
-### US-INV-04: Material Selection — Per Piece vs. Per MT Pricing Toggle
+### US-INV-04: Material Selection — Pricing by Weight (Per MT) Only
 
 **As a** Billing Admin,  
-**I want to** specify pricing explicitly either by unit count (Per Piece) or by weight (Per MT) using radio buttons when I select a part,  
-**So that** the system dynamically adapts to my pricing logic without me needing to do external calculations.
+**I want to** explicitly price all invoiced parts per MT (per metric ton), entering the number of pieces sold and allowing the system to back-calculate the invoiced weight based on unit weight,  
+**So that** I do not have to double-enter weights for uniformly cut/slit segments. *Note: "Price per Piece" billing is strictly Out of Scope for the initial release but is planned for future customer implementation [customer name: JGI].*
 
 #### 4.4.1 Requirements
 
 | ID | Requirement | Priority |
 |---|---|---|
-| INV-REQ-015 | When a user checks the checkbox for a specific part inside the Coil Accordion, an **expanded inline sub-row** is revealed with pricing configuration. | Must Have |
-| INV-REQ-016 | The pricing configuration shall feature two explicit, clear radio buttons: **Pricing Mode: [ ] Per Piece [ ] Per MT**. | Must Have |
-| INV-REQ-017 | **If "Per Piece" is selected**: The user inputs `No. of Pieces` and `Price per Piece`. <br/>*System auto-calculates*: Total Weight (Derived from piece proportion) and Total Price (`No. of pieces` × `Price per Piece`). | Must Have |
-| INV-REQ-018 | **If "Per MT" is selected**: The user inputs `Weight to Invoice (in MT)` and `Price per MT`. <br/>*System auto-calculates*: Total Pieces (proportional to weight) and Total Price (`Weight` × `Price per MT`). | Must Have |
-| INV-REQ-019 | The UI must make the non-relevant fields read-only according to the active radio button (e.g., if Per Piece is selected, Weight field cannot be typed in directly, it is greyed out/auto-computed). | Must Have |
+| INV-REQ-015 | When a user checks the checkbox for a specific part in the flat table, an **expanded inline sub-row** is revealed with pricing parameters. | Must Have |
+| INV-REQ-016 | For physically discrete pieces (Slit-based and Sheet-based): The user shall input `No. of Pieces` and `Price per MT`. | Must Have |
+| INV-REQ-017 | Taking the inputted Pieces, the system auto-calculates Total Weight (`Pieces` × `Unit Weight of Part`) and renders it as read-only. | Must Have |
+| INV-REQ-018 | Line Total is calculated dynamically as `Auto-calculated Total Weight` × `Price per MT`. | Must Have |
 
 #### 4.4.2 Acceptance Criteria
 
-- [ ] Explicit radio buttons eliminate ambiguity on how an item is being billed.
-- [ ] The line total calculates accurately immediately upon typing in the selected input constraints.
+- [ ] Users do not choose between Pricing Modes (no toggles).
+- [ ] The line total calculates accurately immediately upon typing in the pieces.
 
 ---
 
-### US-INV-05: Material Selection — Leftover Coil Sales
+### US-INV-04B: Material Selection — Leftover Coil Sales
 
 **As a** Billing Admin,  
 **I want to** have the option to directly sell the Leftover scrap/remainder from a coil, specifying exactly how much weight out of the leftover balance I am selling,  
@@ -180,8 +181,8 @@ Invoice Lifecycle
 
 | ID | Requirement | Priority |
 |---|---|---|
-| INV-REQ-020 | Inside every Coil Accordion, the final row of the parts table shall be designated as **"Leftover Coil"**. It shall lack dimensions and piece counts (N/A). | Must Have |
-| INV-REQ-021 | When the Leftover Coil checkbox is checked, the expanded row displays ONLY weight-based input. | Must Have |
+| INV-REQ-020 | Inside the parts table list, the final row for any given parent coil shall be designated as **"Leftover Coil"**. It inherently lacks discrete piece counts. | Must Have |
+| INV-REQ-021 | When the Leftover Coil checkbox is checked, the expanded row displays ONLY weight-based input (`Weight to Invoice` instead of `Pieces`). | Must Have |
 | INV-REQ-022 | Leftover Input shall require: `Weight to be Invoiced (MT)` and `Price per MT`. Total price is auto-calculated. | Must Have |
 | INV-REQ-023 | The invoiced weight cannot exceed the actual leftover weight available for that specific coil. Show inline error if exceeded. | Must Have |
 
@@ -270,9 +271,9 @@ Invoice Lifecycle
 |---|---|---|
 | FR-INV-01 | Step-by-step creation wizard featuring Draft persistence. | Must Have |
 | FR-INV-02 | Coil Selection Step supporting searchable, filterable grid with lazy-loading payload logic. | Must Have |
-| FR-INV-03 | Grouping of items inside an accordion determined by Parent Coil identifier. | Must Have |
-| FR-INV-04 | Radio-button driven dynamic inputs (Piece vs. MT) controlling which attribute auto-calculates. | Must Have |
-| FR-INV-05 | Logic treating Leftover scrap differently from cut parts (No Piece radio button). | Must Have |
+| FR-INV-03 | Coil details display separately in a master grid, while a flat layout holds billable line-items. | Must Have |
+| FR-INV-04 | Logic for handling discrete pieces (auto-calculating MT weight based on entered piece count). | Must Have |
+| FR-INV-05 | Logic treating Leftover scrap differently from cut parts (direct weight entry). | Must Have |
 | FR-INV-06 | Full mathematical waterfall (Line totals → Subtotal → Add. Charges → Tax → Grand Total). | Must Have |
 | FR-INV-07 | Linking UI shipping address to billing via singular checkbox. | Must Have |
 | FR-INV-08 | PDF Generation capabilities upon transitioning to Issue status. | Must Have |
@@ -281,38 +282,33 @@ Invoice Lifecycle
 
 ## 6. Calculation Specifications
 
-### 6.1 Per Piece Pricing (Derived Weight)
+### 6.1 Standard Weight Calculation (Per MT Mode)
 
-When a cut sheet part is selected as **Per Piece**:
+When a slitting, cutting, or slit cut part is selected:
 
 ```javascript
 // Known constraints via parent inventory:
-per_piece_standard_weight_MT = total_parent_batch_weight_MT / total_parent_pieces
+per_piece_standard_weight_MT = batch_unit_weight // (e.g. 0.02 MT per sheet)
 
 // User Inputs:
 input_pieces = {user_value}
-input_price_per_piece = {user_value}
+input_price_per_MT = {user_value}
 
 // Auto Derived:
 derived_weight_to_invoice_MT = input_pieces × per_piece_standard_weight_MT
-line_total = input_pieces × input_price_per_piece
+line_total = derived_weight_to_invoice_MT × input_price_per_MT
 ```
 
-### 6.2 Per MT Pricing (Derived Pieces)
+### 6.2 Leftover Weight Calculation
 
-When a cut sheet part is selected as **Per MT**:
+When a leftover item is selected:
 
 ```javascript
-// Known constraints via parent inventory:
-per_piece_standard_weight_MT = total_parent_batch_weight_MT / total_parent_pieces
-
 // User Inputs:
 input_weight_MT = {user_value}
 input_price_per_MT = {user_value}
 
 // Auto Derived:
-derived_pieces_to_invoice = (input_weight_MT / per_piece_standard_weight_MT) 
-// User must be able to choose between rounding up (Ceiling) or rounding down (Floor) if result is fractional.
 line_total = input_weight_MT × input_price_per_MT
 ```
 
@@ -347,7 +343,7 @@ Final_Grand_Total = Math.round(Raw_Grand_Total)
 | ID | Requirement | Target |
 |---|---|---|
 | NFR-INV-01 | Inline pricing input line calculations react within 100ms. | Performance |
-| NFR-INV-02 | The Accordion layout must smoothly manage lists of up to 50 parent coils on a single screen without crashing. | Scalability |
+| NFR-INV-02 | Lists of up to 50 parent coils on a single screen must be manageable without lag. | Scalability |
 | NFR-INV-03 | PDF layouts must print crisply on standard A4 layout. | UI/UX |
 
 ---
@@ -373,10 +369,9 @@ Final_Grand_Total = Math.round(Raw_Grand_Total)
 |---|---|---|
 | `part_id` | UUID | Reference to specific stock / cut |
 | `is_leftover` | Boolean | Flags scrap vs finished sheet |
-| `pricing_mode` | Enum | `PER_PIECE` or `PER_MT` |
-| `billed_pieces` | Integer | Auto-derived if mode was PER_MT, else user input |
-| `billed_weight_MT` | Number | Auto-derived if mode was PER_PIECE, else user input |
-| `unit_rate` | Number | User input against the mode selection |
+| `billed_pieces` | Integer | User input (if not leftover) |
+| `billed_weight_MT` | Number | Auto-derived (or user input if leftover) |
+| `unit_rate_MT` | Number | User input price per metric ton |
 | `line_total` | Number | Calculated result |
 
 ---
@@ -385,16 +380,16 @@ Final_Grand_Total = Math.round(Raw_Grand_Total)
 
 | # | Question | Owner | Status |
 |---|---|---|---|
-| OQ-1 | When calculating derived pieces from weight (Per MT mode), if the maths returns a fraction (e.g. 10.4 pieces), should the system throw a validation block error, truncate to 10, or allow decimal piece fractions? | Business | **Closed**: User allowed to choose (Floor/Ceiling). |
-| OQ-2 | Can multiple different tax rates apply simultaneously to distinct line items based on HSN codes, or is tax applied universally to the Net Total at the bottom? (Currently specified as universal). | Business | **Closed**: Global for now. Line-item tax is Future Scope. |
-| OQ-3 | What determines standard pricing references? Should `Price per MT` pull from a master pricebook by default? | Product | **Closed**: Manual input for now. Master pricebook is Future Scope. |
+| OQ-1 | Can multiple different tax rates apply simultaneously to distinct line items based on HSN codes, or is tax applied universally to the Net Total at the bottom? (Currently specified as universal). | Business | **Closed**: Global for now. Line-item tax is Future Scope. |
+| OQ-2 | What determines standard pricing references? Should `Price per MT` pull from a master pricebook by default? | Product | **Closed**: Manual input for now. Master pricebook is Future Scope. |
 
 ---
 
 ## 11. Future Scope
 
 - **Flexible Tax Application**: The system will eventually support a toggle in "Settings" to choose between **Line-Item Level Tax** (applying specific HSN/Tax rates per part) and **Global Tax** (applying a single rate to the entire Net Total). The current implementation focuses on Global Tax for simplicity.
-- **Master Pricebook Integration**: Future versions will include the ability to pull default `Price per MT` or `Price per Piece` from a master pricebook/catalog based on grade/thickness/width, while still allowing for manual user overrides at the line-item level.
+- **Master Pricebook Integration**: Future versions will include the ability to pull default `Price per MT` from a master pricebook/catalog based on grade/thickness/width, while still allowing for manual user overrides at the line-item level.
+- **Per-Piece Pricing for JGI**: Integration of a dedicated **Per Piece** pricing flow to support customer JGI. Currently deferred to future phases to keep baseline billing purely weight-driven.
 
 ---
 *Document End.*

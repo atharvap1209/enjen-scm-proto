@@ -328,7 +328,15 @@ export function renderSubmitQuote(rfq, onRefresh) {
         }
 
         const idx = SUPPLIER_RFQS.findIndex(r => r.rfqNumber === rfq.rfqNumber);
-        if (idx !== -1) SUPPLIER_RFQS[idx].status = 'Quote Submitted';
+        if (idx !== -1) {
+            SUPPLIER_RFQS[idx].status = 'Quote Submitted';
+            SUPPLIER_RFQS[idx].submittedQuote = {
+                lineItems: JSON.parse(JSON.stringify(lineState)),
+                shippingCost: parseFloat(shippingCost) || 0,
+                taxPct: parseFloat(taxPct) || 0,
+                termsAndConditions: termsAndConditions
+            };
+        }
 
         closePanel();
         showToast('Quote Submitted', `Your quote for ${rfq.rfqNumber} has been submitted to the customer.`, 'success');

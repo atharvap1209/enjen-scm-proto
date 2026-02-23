@@ -11,9 +11,10 @@ const PAYMENT_TERMS_OPTIONS = ['Net 30 Days', 'Net 60 Days', 'Net 90 Days', 'Imm
 // Mock parts per coil – in real app these come from WO outputs
 function getMockPartsForCoil(coilId) {
   return [
-    { id: `${coilId}-P1`, name: 'Sheet Cut A', desc: '1200 × 2500 mm', type: 'GI Sheet', weightMT: 5, totalPieces: 250, unitWeight: 0.02 },
-    { id: `${coilId}-P2`, name: 'Slit Strip B', desc: '400 mm width', type: 'GP Coil', weightMT: 12, totalPieces: 1, unitWeight: 12 },
-    { id: `${coilId}-LO`, name: 'Leftover Coil', desc: 'N/A', type: 'N/A', weightMT: 3.5, totalPieces: null, unitWeight: null, isLeftover: true },
+    { id: `${coilId}-P1`, name: 'Sheet Cut A', partType: 'cutting', width: 1200, length: 2500, weightMT: 5, totalPieces: 250, unitWeight: 0.02 },
+    { id: `${coilId}-P2`, name: 'Slit Strip B', partType: 'slitting', width: 400, weightMT: 12, totalPieces: 30, unitWeight: 0.4 },
+    { id: `${coilId}-P3`, name: 'Sheet Cut C', partType: 'slit+cut', width: 600, length: 1500, weightMT: 8, totalPieces: 400, unitWeight: 0.02 },
+    { id: `${coilId}-LO`, name: 'Leftover Coil', partType: 'leftover', width: 1200, weightMT: 3.5, totalPieces: null, unitWeight: null, isLeftover: true },
   ];
 }
 
@@ -26,7 +27,7 @@ function resetFD() {
     poNo: '', paymentTerms: 'Net 30 Days', ewayBill: '',
     billingAddress: '', shippingAddress: '', sameAsBilling: true,
     selectedCoils: [],
-    materials: {}, expandedCoils: {},
+    materials: {},
     transportChg: 0, handlingChg: 0, packingChg: 0, otherChg: 0, taxRate: 18,
     bankId: '',
     paymentDetailsExpanded: true, termsExpanded: true,
@@ -267,150 +268,150 @@ function buildStep3() {
         </div>`;
   }
 
-  if (fd.selectedCoils.length === 1 && Object.keys(fd.expandedCoils).length === 0) {
-    fd.expandedCoils[fd.selectedCoils[0].id] = true;
-  }
+  const selectedCoilsGrid = `
+    <div class="card" style="margin-bottom:var(--sp-4)">
+      <div class="card__header"><h3 class="card__title">Selected Coils Details</h3></div>
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Coil No.</th><th>Grade</th><th>Thickness</th><th>Width</th><th>Surface</th><th>Coating</th><th>Current Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${fd.selectedCoils.map(c => `
+              <tr>
+                <td><strong>${c.id}</strong></td>
+                <td>${c.grade}</td>
+                <td>${c.thicknessMm} mm</td>
+                <td>${c.widthMm} mm</td>
+                <td>${c.surface}</td>
+                <td>${c.coating}</td>
+                <td>${c.currentWeightMT} MT</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 
-  const accordions = fd.selectedCoils.map(coil => {
+  let partsHtml = '';
+
+  fd.selectedCoils.forEach((coil) => {
     if (!fd.materials[coil.id]) {
       fd.materials[coil.id] = getMockPartsForCoil(coil.id).map(p => ({
-        ...p, isSelected: false, pricingMode: 'PER_PIECE', roundMode: 'FLOOR',
+        ...p, isSelected: false,
         inputPieces: 0, inputWeight: 0, inputPrice: 0, lineTotal: 0
       }));
     }
 
-    const isExpanded = !!fd.expandedCoils[coil.id];
     const parts = fd.materials[coil.id];
-    const selectedCount = parts.filter(p => p.isSelected).length;
 
-    const partsHtml = parts.map((p, idx) => {
+    partsHtml += parts.map((p, idx) => {
       const isSel = p.isSelected;
+      const isSheetBased = ['cutting', 'slit+cut'].includes(p.partType);
+      const isSlitBased = p.partType === 'slitting';
+      const isLeftover = p.partType === 'leftover';
+
+      let dimensions = '';
+      if (isSheetBased) dimensions = `${p.width} mm \u00D7 ${p.length} mm`;
+      else if (isSlitBased || isLeftover) dimensions = `${p.width} mm`;
+
       const rowHtml = `
-              <tr style="${isSel ? 'background:var(--purple-50)' : ''}">
-                <td><input type="checkbox" class="part-cb" data-coil="${coil.id}" data-idx="${idx}" ${isSel ? 'checked' : ''} /></td>
-                <td style="font-weight:${p.isLeftover ? '600' : 'normal'}">
-                  ${p.name}
-                  ${p.isLeftover ? '<span class="badge badge--pending" style="margin-left:6px;font-size:0.7rem">Leftover</span>' : ''}
-                </td>
-                <td>${p.desc}</td><td>${p.type}</td><td>${p.weightMT} MT</td>
-                <td style="font-weight:600;text-align:right;color:${p.lineTotal > 0 ? 'var(--gray-900)' : 'var(--gray-400)'}">
-                  ${p.lineTotal > 0 ? '₹' + p.lineTotal.toLocaleString('en-IN') : '—'}
-                </td>
-              </tr>`;
+        <tr style="${isSel ? 'background:var(--purple-50)' : ''}">
+          <td><input type="checkbox" class="part-cb" data-coil="${coil.id}" data-idx="${idx}" ${isSel ? 'checked' : ''} /></td>
+          <td><strong>${coil.id}</strong></td>
+          <td style="font-weight:${p.isLeftover ? '600' : 'normal'}">
+            ${p.name}
+            ${p.isLeftover ? '<span class="badge badge--pending" style="margin-left:6px;font-size:0.7rem">Leftover</span>' : ''}
+          </td>
+          <td>${dimensions}</td>
+          <td>${p.totalPieces !== null ? p.totalPieces + ' pcs' : '—'}</td>
+          <td>${p.weightMT} MT</td>
+          <td style="font-weight:600;text-align:right;color:${p.lineTotal > 0 ? 'var(--gray-900)' : 'var(--gray-400)'}">
+            ${p.lineTotal > 0 ? '₹' + p.lineTotal.toLocaleString('en-IN') : '—'}
+          </td>
+        </tr>`;
 
       let inlineConfig = '';
       if (isSel) {
         if (p.isLeftover) {
           inlineConfig = `
-                      <tr style="background:var(--purple-50);border-bottom:2px solid var(--purple-200)">
-                        <td colspan="6" style="padding:var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-6)">
-                          <div style="display:flex;gap:var(--sp-5);align-items:flex-end">
-                            <div class="form-group" style="margin:0;width:160px">
-                              <label class="form-label" style="font-size:0.75rem">Weight to Invoice (MT) <span class="required">*</span></label>
-                              <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputWeight" value="${p.inputWeight || ''}" max="${p.weightMT}" step="0.01" />
-                              <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.weightMT} MT available</div>
-                            </div>
-                            <div class="form-group" style="margin:0;width:160px">
-                              <label class="form-label" style="font-size:0.75rem">Price per MT (₹) <span class="required">*</span></label>
-                              <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPrice" value="${p.inputPrice || ''}" />
-                            </div>
-                            <div style="padding-bottom:8px;font-size:0.9rem;color:var(--gray-600)">
-                              Line Total: <strong style="color:var(--purple-700);font-size:1rem">₹${p.lineTotal.toLocaleString('en-IN')}</strong>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>`;
+            <tr style="background:var(--purple-50);border-bottom:1px solid var(--purple-200)">
+              <td colspan="7" style="padding:var(--sp-2) var(--sp-4) var(--sp-4) 48px">
+                <div style="background:#fff;border:1px solid var(--purple-200);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);display:flex;gap:var(--sp-5);align-items:center;">
+                  <div class="form-group" style="margin:0;width:160px">
+                    <label class="form-label" style="font-size:0.75rem">Weight to Invoice (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputWeight" value="${p.inputWeight || ''}" max="${p.weightMT}" step="0.01" />
+                    <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.weightMT} MT</div>
+                  </div>
+                  <div class="form-group" style="margin:0;width:160px">
+                    <label class="form-label" style="font-size:0.75rem">Price per MT (₹) <span class="required">*</span></label>
+                    <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPrice" value="${p.inputPrice || ''}" />
+                  </div>
+                  <div style="margin-left:auto;text-align:right">
+                    <div style="font-size:0.8rem;color:var(--gray-500)">Line Total</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--purple-700)">₹${p.lineTotal.toLocaleString('en-IN')}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
         } else {
-          const isPiece = p.pricingMode === 'PER_PIECE';
           inlineConfig = `
-                      <tr style="background:var(--purple-50);border-bottom:2px solid var(--purple-200)">
-                        <td colspan="6" style="padding:var(--sp-3) var(--sp-4) var(--sp-4) var(--sp-5)">
-                          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);display:flex;gap:var(--sp-5);align-items:center">
-                            <div style="display:flex;flex-direction:column;gap:6px;padding-right:16px;border-right:1px solid var(--gray-200)">
-                              <label style="font-size:0.8rem;font-weight:700;color:var(--gray-700)">Pricing Mode</label>
-                              <div style="display:flex;gap:12px">
-                                <label class="checkbox-row" style="font-size:0.85rem;gap:6px">
-                                  <input type="radio" name="mode_${coil.id}_${idx}" class="mode-radio" data-coil="${coil.id}" data-idx="${idx}" value="PER_PIECE" ${isPiece ? 'checked' : ''} /> Per Piece
-                                </label>
-                                <label class="checkbox-row" style="font-size:0.85rem;gap:6px">
-                                  <input type="radio" name="mode_${coil.id}_${idx}" class="mode-radio" data-coil="${coil.id}" data-idx="${idx}" value="PER_MT" ${!isPiece ? 'checked' : ''} /> Per MT
-                                </label>
-                              </div>
-                            </div>
-                            <div style="display:flex;gap:var(--sp-3);align-items:flex-end">
-                              ${isPiece ? `
-                                <div class="form-group" style="margin:0;width:130px">
-                                  <label class="form-label" style="font-size:0.75rem">No. of Pieces <span class="required">*</span></label>
-                                  <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPieces" value="${p.inputPieces || ''}" max="${p.totalPieces}" min="0" />
-                                  <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.totalPieces} pcs</div>
-                                </div>
-                                <div class="form-group" style="margin:0;width:130px">
-                                  <label class="form-label" style="font-size:0.75rem">Price Per Piece (₹) <span class="required">*</span></label>
-                                  <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPrice" value="${p.inputPrice || ''}" />
-                                </div>
-                                <div class="form-group" style="margin:0;width:130px">
-                                  <label class="form-label" style="font-size:0.75rem">Weight (Auto-calculated)</label>
-                                  <input type="text" class="form-input" readonly style="background:var(--gray-50)" value="${p.inputWeight ? p.inputWeight.toFixed(3) + ' MT' : '—'}" />
-                                </div>
-                              ` : `
-                                <div class="form-group" style="margin:0;width:130px">
-                                  <label class="form-label" style="font-size:0.75rem">Weight (MT) <span class="required">*</span></label>
-                                  <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputWeight" value="${p.inputWeight || ''}" max="${p.weightMT}" step="0.01" />
-                                  <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.weightMT} MT</div>
-                                </div>
-                                <div class="form-group" style="margin:0;width:130px">
-                                  <label class="form-label" style="font-size:0.75rem">Price Per MT (₹) <span class="required">*</span></label>
-                                  <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPrice" value="${p.inputPrice || ''}" />
-                                </div>
-                                <div class="form-group" style="margin:0;width:140px">
-                                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-                                    <label class="form-label" style="font-size:0.75rem;margin:0">Pieces (Auto)</label>
-                                    <select class="round-select" data-coil="${coil.id}" data-idx="${idx}" style="border:none;background:var(--purple-50);font-size:0.65rem;color:var(--purple-700);cursor:pointer;padding:2px 4px;border-radius:4px;outline:none;font-weight:600">
-                                      <option value="FLOOR" ${p.roundMode === 'FLOOR' ? 'selected' : ''}>↓ Floor</option>
-                                      <option value="CEIL" ${p.roundMode === 'CEIL' ? 'selected' : ''}>↑ Ceil</option>
-                                    </select>
-                                  </div>
-                                  <input type="text" class="form-input" readonly style="background:var(--gray-50)" value="${p.inputPieces > 0 ? p.inputPieces + ' pcs' : '—'}" />
-                                </div>
-                              `}
-                              <div style="padding-bottom:8px;font-size:0.9rem;color:var(--gray-600);white-space:nowrap">
-                                Total: <strong style="color:var(--purple-700);font-size:1rem">₹${p.lineTotal.toLocaleString('en-IN')}</strong>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>`;
+            <tr style="background:var(--purple-50);border-bottom:1px solid var(--purple-200)">
+              <td colspan="7" style="padding:var(--sp-2) var(--sp-4) var(--sp-4) 48px">
+                <div style="background:#fff;border:1px solid var(--purple-200);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);display:flex;gap:var(--sp-5);align-items:center;">
+                  <div class="form-group" style="margin:0;width:140px">
+                    <label class="form-label" style="font-size:0.75rem">No. of Pieces / Slits <span class="required">*</span></label>
+                    <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPieces" value="${p.inputPieces || ''}" max="${p.totalPieces}" min="0" />
+                    <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.totalPieces} pcs</div>
+                  </div>
+                  <div class="form-group" style="margin:0;width:140px">
+                    <label class="form-label" style="font-size:0.75rem">Weight (Auto-calc MT)</label>
+                    <input type="text" class="form-input" readonly style="background:var(--gray-50)" value="${p.inputWeight ? p.inputWeight.toFixed(3) : '—'}" />
+                  </div>
+                  <div class="form-group" style="margin:0;width:140px">
+                    <label class="form-label" style="font-size:0.75rem">Price Per MT (₹) <span class="required">*</span></label>
+                    <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPrice" value="${p.inputPrice || ''}" />
+                  </div>
+                  <div style="margin-left:auto;text-align:right">
+                    <div style="font-size:0.8rem;color:var(--gray-500)">Line Total</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:var(--purple-700)">₹${p.lineTotal.toLocaleString('en-IN')}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
         }
       }
       return rowHtml + inlineConfig;
     }).join('');
-
-    return `
-          <div class="card" style="margin-bottom:var(--sp-3)">
-            <div class="card__header accordion-header" data-coil="${coil.id}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;gap:var(--sp-3);align-items:center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:${isExpanded ? 'rotate(180deg)' : 'rotate(0)'};transition:transform 0.2s;flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
-                <span><strong>${coil.id}</strong> <span style="color:var(--gray-500);font-weight:normal">| ${coil.grade} | ${coil.thicknessMm}mm × ${coil.widthMm}mm | GRN: ${coil.aging}</span></span>
-              </div>
-              ${selectedCount > 0 ? `<span class="badge badge--in-progress" style="font-size:0.75rem">${selectedCount} item${selectedCount > 1 ? 's' : ''} added</span>` : ''}
-            </div>
-            ${isExpanded ? `
-              <div class="card__body" style="padding:0">
-                <table class="output-table" style="margin:0;border:none">
-                  <thead style="background:var(--gray-50)"><tr>
-                    <th style="width:40px"><input type="checkbox" class="cb-select-all" data-coil="${coil.id}" title="Select all parts from this coil" /></th>
-                    <th>Part Name</th><th>Dimensions</th><th>Item Type</th><th>Available Weight</th><th style="text-align:right">Line Total</th>
-                  </tr></thead>
-                  <tbody>${partsHtml}</tbody>
-                </table>
-              </div>` : ''}
-          </div>`;
-  }).join('');
+  });
 
   return `
-      <div class="section-title">Material Selection</div>
-      <p style="color:var(--gray-500);font-size:0.9rem;margin-bottom:var(--sp-4)">Check the parts you want to invoice. Choose pricing mode (Per Piece or Per MT) for each selected item.</p>
-      ${accordions}`;
+    <div class="section-title">Material Selection</div>
+    <p style="color:var(--gray-500);font-size:0.9rem;margin-bottom:var(--sp-4)">Review selected coils details below and choose the exact parts to invoice.</p>
+    ${selectedCoilsGrid}
+    <div class="card" style="margin-bottom:var(--sp-3)">
+      <div class="card__header"><h3 class="card__title">Available Parts to Invoice</h3></div>
+      <div class="card__body" style="padding:0; overflow-x:auto;">
+        <table class="output-table" style="margin:0;border:none;min-width:800px;">
+          <thead style="background:var(--gray-50)">
+            <tr>
+              <th style="width:40px"></th>
+              <th style="width:120px">Coil No.</th>
+              <th>Part Name</th>
+              <th>Dimensions</th>
+              <th>Available Pieces</th>
+              <th>Available Weight</th>
+              <th style="text-align:right">Line Total</th>
+            </tr>
+          </thead>
+          <tbody>${partsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 // ─── STEP 4 ───────────────────────────────────────────────────────────────────
@@ -435,9 +436,9 @@ function buildStep4() {
 
   const itemsTable = selectedItems.length > 0 ? `
       <table class="output-table" style="margin:0;border:none">
-        <thead style="background:var(--gray-50)"><tr><th>Part</th><th>Mode</th><th>Weight (MT)</th><th style="text-align:right">Line Total</th></tr></thead>
+        <thead style="background:var(--gray-50)"><tr><th>Part</th><th>Weight (MT)</th><th style="text-align:right">Line Total</th></tr></thead>
         <tbody>
-          ${selectedItems.map(i => `<tr><td>${i.name} <span style="color:var(--gray-400);font-size:0.8rem">(${i.coil})</span></td><td>${i.mode.replace('_', ' ')}</td><td>${i.weight ? i.weight.toFixed(3) : '—'}</td><td style="text-align:right;font-weight:600">₹${i.total.toLocaleString('en-IN')}</td></tr>`).join('')}
+          ${selectedItems.map(i => `<tr><td>${i.name} <span style="color:var(--gray-400);font-size:0.8rem">(${i.coil})</span></td><td>${i.weight ? i.weight.toFixed(3) : '—'}</td><td style="text-align:right;font-weight:600">₹${i.total.toLocaleString('en-IN')}</td></tr>`).join('')}
         </tbody>
       </table>` : `<div style="color:var(--gray-400);padding:var(--sp-3);text-align:center">No materials selected. Go back to Step 3.</div>`;
 
@@ -584,20 +585,19 @@ function buildStep6() {
         <div class="card__header"><h3 class="card__title">Materials &amp; Pricing</h3></div>
         <table class="output-table" style="margin:0;border:none">
           <thead style="background:var(--gray-50)"><tr>
-            <th>Coil</th><th>Part Name</th><th>Mode</th><th>Weight (MT)</th><th>Pieces</th><th>Rate</th><th style="text-align:right">Line Total</th>
+            <th>Coil</th><th>Part Name</th><th>Weight (MT)</th><th>Pieces</th><th>Rate / MT</th><th style="text-align:right">Line Total</th>
           </tr></thead>
           <tbody>
             ${items.map(i => `
               <tr>
                 <td style="color:var(--gray-500);font-size:0.85rem">${i.coil}</td>
                 <td>${i.name}</td>
-                <td><span class="badge badge--draft" style="font-size:0.7rem">${i.mode === 'PER_PIECE' ? 'Per Piece' : 'Per MT'}</span></td>
                 <td>${i.w ? i.w.toFixed(3) : '—'}</td>
                 <td>${i.pc > 0 ? i.pc : '—'}</td>
                 <td>₹${(i.rate || 0).toLocaleString('en-IN')}</td>
                 <td style="text-align:right;font-weight:600">₹${i.t.toLocaleString('en-IN')}</td>
               </tr>`).join('')}
-            ${items.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:var(--sp-4)">No materials selected. Go back to Step 3.</td></tr>' : ''}
+            ${items.length === 0 ? '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:var(--sp-4)">No materials selected. Go back to Step 3.</td></tr>' : ''}
           </tbody>
         </table>
       </div>
@@ -672,17 +672,10 @@ function saveStep() {
 
 // ─── Recalculate a Part ───────────────────────────────────────────────────────
 function recalcPart(p) {
-  if (p.pricingMode === 'PER_PIECE') {
+  if (!p.isLeftover) {
     p.inputWeight = p.inputPieces * (p.unitWeight || 0);
-    p.lineTotal = p.inputPieces * p.inputPrice;
-  } else {
-    if (!p.isLeftover && p.unitWeight) {
-      const exactPieces = p.inputWeight / p.unitWeight;
-      p.inputPieces = p.roundMode === 'CEIL' ? Math.ceil(exactPieces) : Math.floor(exactPieces);
-      if (isNaN(p.inputPieces) || p.inputPieces < 0) p.inputPieces = 0;
-    }
-    p.lineTotal = p.inputWeight * p.inputPrice;
   }
+  p.lineTotal = p.inputWeight * p.inputPrice;
 }
 
 // ─── Bind Step Events ─────────────────────────────────────────────────────────
@@ -714,52 +707,11 @@ function bindStep() {
   }
 
   if (currentStep === 3) {
-    // Accordion toggle
-    document.querySelectorAll('.accordion-header').forEach(hdr => {
-      hdr.addEventListener('click', () => {
-        const id = hdr.dataset.coil;
-        fd.expandedCoils[id] = !fd.expandedCoils[id];
-        drawStep();
-      });
-    });
-
-    // Select All per coil
-    document.querySelectorAll('.cb-select-all').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const coilId = cb.dataset.coil;
-        const parts = fd.materials[coilId] || [];
-        parts.forEach(p => { p.isSelected = cb.checked; });
-        drawStep();
-      });
-    });
-
     // Individual part checkbox
     document.querySelectorAll('.part-cb').forEach(cb => {
       cb.addEventListener('change', () => {
         const p = fd.materials[cb.dataset.coil]?.[parseInt(cb.dataset.idx)];
         if (p) { p.isSelected = cb.checked; drawStep(); }
-      });
-    });
-
-    // Pricing mode radio
-    document.querySelectorAll('.mode-radio').forEach(rad => {
-      rad.addEventListener('change', () => {
-        const p = fd.materials[rad.dataset.coil]?.[parseInt(rad.dataset.idx)];
-        if (!p) return;
-        p.pricingMode = rad.value;
-        p.inputPieces = 0; p.inputWeight = 0; p.inputPrice = 0; p.lineTotal = 0;
-        drawStep();
-      });
-    });
-
-    // Rounding mode select
-    document.querySelectorAll('.round-select').forEach(sel => {
-      sel.addEventListener('change', () => {
-        const p = fd.materials[sel.dataset.coil]?.[parseInt(sel.dataset.idx)];
-        if (!p) return;
-        p.roundMode = sel.value;
-        recalcPart(p);
-        drawStep();
       });
     });
 
@@ -785,6 +737,37 @@ function bindStep() {
       // Full redraw only on blur (to refresh derived fields like weight/pieces display)
       inp.addEventListener('blur', () => { drawStep(); });
     });
+  }
+
+  if (currentStep === 4) {
+    const updateSummary = () => {
+      saveStep();
+      let subtotal = 0;
+      Object.keys(fd.materials).forEach(cid => {
+        fd.materials[cid].forEach(p => { if (p.isSelected) subtotal += (p.lineTotal || 0); });
+      });
+      const charges = parseFloat(fd.transportChg || 0) + parseFloat(fd.handlingChg || 0) + parseFloat(fd.packingChg || 0) + parseFloat(fd.otherChg || 0);
+      const netTotal = subtotal + charges;
+      const taxAmt = netTotal * (parseFloat(fd.taxRate || 0) / 100);
+      const rawGrand = netTotal + taxAmt;
+      const grandTotal = Math.round(rawGrand);
+      const roundOff = grandTotal - rawGrand;
+
+      const summaryCard = document.querySelector('.card[style*="background:var(--gray-50)"] .card__body');
+      if (summaryCard) {
+        summaryCard.innerHTML = `
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:var(--gray-600)">Material Subtotal</span><strong>₹${subtotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:var(--gray-600)">Extra Charges</span><strong>+ ₹${charges.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;padding-top:10px;border-top:1px dashed var(--gray-300);font-weight:600"><span>Net Total</span><span>₹${netTotal.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="color:var(--gray-600)">Tax (${fd.taxRate}%)</span><strong>+ ₹${taxAmt.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</strong></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;color:var(--gray-400)"><span>Round Off</span><span>₹${roundOff.toFixed(2)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:2px solid var(--gray-300);font-size:1.1rem;font-weight:700;color:var(--purple-700)"><span>Grand Total</span><span>₹${grandTotal.toLocaleString('en-IN')}</span></div>
+        `;
+      }
+    };
+
+    document.querySelectorAll('.chg-inp').forEach(inp => inp.addEventListener('input', updateSummary));
+    document.getElementById('taxRate')?.addEventListener('change', updateSummary);
   }
 
   if (currentStep === 5) {

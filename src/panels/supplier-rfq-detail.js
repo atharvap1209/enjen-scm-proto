@@ -1,12 +1,14 @@
 // Supplier Portal — RFQ Detail Side Panel
 import { openPanel, closePanel } from '../main.js';
 import { renderSubmitQuote } from './supplier-submit-quote.js';
+import { renderViewQuote } from './supplier-view-quote.js';
 
 export function renderSupplierRFQDetail(rfq, onRefresh) {
     const statusBadge = (status) => {
         const map = {
             'Open': 'badge--sp-open',
             'Quote Submitted': 'badge--sp-submitted',
+            'Selected': 'badge--sp-selected',
             'Closed': 'badge--sp-closed',
             'Expired': 'badge--sp-expired',
         };
@@ -121,10 +123,10 @@ export function renderSupplierRFQDetail(rfq, onRefresh) {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
                         Submit Quote
                     </button>
-                ` : rfq.status === 'Quote Submitted' ? `
-                    <button class="btn btn--outline" disabled style="opacity:0.7;cursor:not-allowed;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-                        Quote Already Submitted
+                ` : (rfq.status === 'Quote Submitted' || rfq.status === 'Selected') ? `
+                    <button class="btn btn--primary" id="viewQuoteBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        View Quote
                     </button>
                 ` : ''}
             </div>
@@ -136,6 +138,10 @@ export function renderSupplierRFQDetail(rfq, onRefresh) {
 
     document.getElementById('submitQuoteBtn')?.addEventListener('click', () => {
         renderSubmitQuote(rfq, onRefresh);
+    });
+
+    document.getElementById('viewQuoteBtn')?.addEventListener('click', () => {
+        renderViewQuote(rfq);
     });
 
     // Attachment links — prevent default and show toast placeholder

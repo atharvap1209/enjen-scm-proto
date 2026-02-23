@@ -387,7 +387,7 @@ export let SUPPLIER_RFQS = [
         dueDate: '28-02-2026',
         approxValue: 875000,
         specialInstructions: 'All items must conform to IS 2062 grade. Delivery to Nagpur warehouse. Include certificate of conformance with each lot.',
-        status: 'Open',
+        status: 'Selected',
         paymentTerms: 'Net 45 days',
         lineItems: [
             {
@@ -412,6 +412,16 @@ export let SUPPLIER_RFQS = [
                 attachments: [],
             },
         ],
+        submittedQuote: {
+            lineItems: {
+                'ITEM-HR-001': { itemPrice: 58000, leadTimeDays: 7, discountPct: 1.5, priceValidityDate: '2026-03-10', deliveryDate: '2026-03-20', notes: '' },
+                'ITEM-CRS-002': { itemPrice: 4200, leadTimeDays: 5, discountPct: 0, priceValidityDate: '2026-03-10', deliveryDate: '2026-03-15', notes: '' },
+                'ITEM-GI-003': { itemPrice: 3800, leadTimeDays: 10, discountPct: 0, priceValidityDate: '2026-03-10', deliveryDate: '2026-03-25', notes: '' }
+            },
+            shippingCost: 8500,
+            taxPct: 18,
+            termsAndConditions: 'Priority delivery confirmed for Nagpur warehouse.'
+        }
     },
     {
         rfqNumber: 'RFQ-2026-0038',
@@ -462,6 +472,29 @@ export let SUPPLIER_RFQS = [
                 attachments: [],
             },
         ],
+        submittedQuote: {
+            lineItems: {
+                'ITEM-GP-020': {
+                    itemPrice: 52000,
+                    leadTimeDays: 7,
+                    discountPct: 2,
+                    priceValidityDate: '2026-03-15',
+                    deliveryDate: '2026-03-25',
+                    notes: 'Standard mill packaging included.'
+                },
+                'ITEM-GP-021': {
+                    itemPrice: 54500,
+                    leadTimeDays: 10,
+                    discountPct: 0,
+                    priceValidityDate: '2026-03-15',
+                    deliveryDate: '2026-03-30',
+                    notes: 'Custom width processing takes extra time.'
+                }
+            },
+            shippingCost: 15000,
+            taxPct: 18,
+            termsAndConditions: '1. Prices are ex-works.\n2. Payment as per RFQ terms.\n3. Goods once sold will not be taken back.'
+        }
     },
     {
         rfqNumber: 'RFQ-2026-0029',
