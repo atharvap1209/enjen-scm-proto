@@ -245,8 +245,8 @@ export const AVAILABLE_INVOICES = [
         value: 1250000, date: '20-02-2026',
         shippingAddress: 'Plot 45, MIDC Nagpur, Maharashtra - 440018',
         lineItems: [
-            { product: 'Slit Coil 2mm CRCA', qty: 5, unitWeightKg: 1000, totalWeightKg: 5000 },
-            { product: 'Cut Sheet 4ft HR', qty: 10, unitWeightKg: 250, totalWeightKg: 2500 },
+            { partName: 'Slit Coil 2mm CRCA', numPieces: 5, unitPrice: 58000, unitWeightMT: 1.0, totalWeightMT: 5.0 },
+            { partName: 'Cut Sheet 4ft HR', numPieces: 10, unitPrice: 24500, unitWeightMT: 0.25, totalWeightMT: 2.5 },
         ]
     },
     {
@@ -254,7 +254,7 @@ export const AVAILABLE_INVOICES = [
         value: 875000, date: '19-02-2026',
         shippingAddress: 'Sector 7, Industrial Area, Pune - 411057',
         lineItems: [
-            { product: 'HR Coil 3mm IS2062', qty: 8, unitWeightKg: 1200, totalWeightKg: 9600 },
+            { partName: 'HR Coil 3mm IS2062', numPieces: 8, unitPrice: 52000, unitWeightMT: 1.2, totalWeightMT: 9.6 },
         ]
     },
     {
@@ -262,8 +262,8 @@ export const AVAILABLE_INVOICES = [
         value: 2100000, date: '18-02-2026',
         shippingAddress: 'G-12, Bhilai Steel Complex, Chhattisgarh - 490001',
         lineItems: [
-            { product: 'GP Coil 150 GSM', qty: 12, unitWeightKg: 900, totalWeightKg: 10800 },
-            { product: 'Slit Strip 1.5mm', qty: 6, unitWeightKg: 500, totalWeightKg: 3000 },
+            { partName: 'GP Coil 150 GSM', numPieces: 12, unitPrice: 48000, unitWeightMT: 0.9, totalWeightMT: 10.8 },
+            { partName: 'Slit Strip 1.5mm', numPieces: 6, unitPrice: 41000, unitWeightMT: 0.5, totalWeightMT: 3.0 },
         ]
     },
     {
@@ -271,7 +271,7 @@ export const AVAILABLE_INVOICES = [
         value: 680000, date: '17-02-2026',
         shippingAddress: 'Plot 12, Hisar Industrial Park, Haryana - 125005',
         lineItems: [
-            { product: 'CR Sheet HRPO 2.5mm', qty: 20, unitWeightKg: 180, totalWeightKg: 3600 },
+            { partName: 'CR Sheet HRPO 2.5mm', numPieces: 20, unitPrice: 33000, unitWeightMT: 0.18, totalWeightMT: 3.6 },
         ]
     },
     {
@@ -279,8 +279,8 @@ export const AVAILABLE_INVOICES = [
         value: 945000, date: '16-02-2026',
         shippingAddress: 'Hazira Manufacturing Division, Surat - 394270',
         lineItems: [
-            { product: 'GI Sheet 180 GSM', qty: 15, unitWeightKg: 350, totalWeightKg: 5250 },
-            { product: 'Blank CRCA 1mm', qty: 30, unitWeightKg: 120, totalWeightKg: 3600 },
+            { partName: 'GI Sheet 180 GSM', numPieces: 15, unitPrice: 36000, unitWeightMT: 0.35, totalWeightMT: 5.25 },
+            { partName: 'Blank CRCA 1mm', numPieces: 30, unitPrice: 11500, unitWeightMT: 0.12, totalWeightMT: 3.6 },
         ]
     },
 ];
@@ -306,7 +306,7 @@ export let SHIPMENTS = [
         customer: 'JSW Steel Ltd', destination: 'Nagpur, MH',
         transportMode: 'Internal Fleet', vehiclePlate: 'MH-17-AB-1234',
         driverName: 'Rajesh Ramesh', ewayBill: '181234567890', pickupDate: '22-02-2026',
-        netWeightKg: 17100, grossWeightKg: 26900,
+        netWeightMT: 17.1, grossWeightMT: 26.9,
         status: 'Ready to Ship', priority: 'High',
         timeline: [
             { event: 'Shipment Created', date: '21-02-2026 09:30', by: 'Priya M', done: true },
@@ -322,7 +322,7 @@ export let SHIPMENTS = [
         transportMode: 'External Carrier', vehiclePlate: 'CG-07-XY-2233',
         driverName: 'Arun Singh', carrierName: 'FastMove Logistics',
         ewayBill: '990011223344', pickupDate: '20-02-2026',
-        netWeightKg: 13800, grossWeightKg: null,
+        netWeightMT: 13.8, grossWeightMT: null,
         status: 'In Transit', priority: 'Normal',
         timeline: [
             { event: 'Shipment Created', date: '20-02-2026 08:00', by: 'Ravi K', done: true },
@@ -337,7 +337,7 @@ export let SHIPMENTS = [
         customer: 'Jindal Steel', destination: 'Hisar, HR',
         transportMode: 'Internal Fleet', vehiclePlate: 'MH-04-CD-5678',
         driverName: 'Suresh Patil', ewayBill: '556677889900', pickupDate: '19-02-2026',
-        netWeightKg: 3600, grossWeightKg: 9600,
+        netWeightMT: 3.6, grossWeightMT: 9.6,
         status: 'Delivered', priority: 'High',
         timeline: [
             { event: 'Shipment Created', date: '19-02-2026 07:00', by: 'Priya M', done: true },
@@ -352,7 +352,7 @@ export let SHIPMENTS = [
         customer: 'Essar Steel', destination: 'Surat, GJ',
         transportMode: 'Internal Fleet', vehiclePlate: 'MH-09-GH-3456',
         driverName: 'Dinesh Kumar', ewayBill: '112233445566', pickupDate: '18-02-2026',
-        netWeightKg: 8850, grossWeightKg: null,
+        netWeightMT: 8.85, grossWeightMT: null,
         status: 'Cancelled', priority: 'Normal',
         cancelReason: 'Vehicle breakdown on route. Rescheduling required.',
         timeline: [
@@ -366,7 +366,7 @@ export let SHIPMENTS = [
         customer: 'Tata Steel', destination: 'Pune, MH',
         transportMode: null, vehiclePlate: null,
         driverName: null, ewayBill: null, pickupDate: null,
-        netWeightKg: 9600, grossWeightKg: null,
+        netWeightMT: 9.6, grossWeightMT: null,
         status: 'Draft', priority: 'Normal',
         timeline: [
             { event: 'Draft Saved', date: '23-02-2026 01:30', by: 'Priya M', done: true },

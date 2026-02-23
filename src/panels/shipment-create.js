@@ -37,20 +37,20 @@ function renderStep() {
     else renderStep3();
 }
 
-function formatKg(kg) { return new Intl.NumberFormat('en-IN').format(kg) + ' kg'; }
+function formatMT(mt) { return new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(mt) + ' MT'; }
 function formatCurrency(v) {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(v);
 }
 
 function calcTotals() {
-    let invoices = 0, items = 0, kg = 0;
+    let invoices = 0, items = 0, mt = 0;
     selectedInvoiceIds.forEach(id => {
         const inv = AVAILABLE_INVOICES.find(i => i.id === id);
         if (!inv) return;
         invoices++; items += inv.lineItems.length;
-        kg += inv.lineItems.reduce((s, li) => s + li.totalWeightKg, 0);
+        mt += inv.lineItems.reduce((s, li) => s + li.totalWeightMT, 0);
     });
-    return { invoices, items, kg };
+    return { invoices, items, mt };
 }
 
 function stepperHtml() {
@@ -77,15 +77,27 @@ function renderStep1() {
         const q = searchTerm.toLowerCase();
         return inv.id.toLowerCase().includes(q) || inv.customer.toLowerCase().includes(q) || inv.orderNo.toLowerCase().includes(q);
     });
-    const { invoices, items, kg } = calcTotals();
+    const { invoices, items, mt } = calcTotals();
 
     const cardsHtml = filtered.length ? filtered.map(inv => {
         const isSelected = selectedInvoiceIds.has(inv.id);
         const isExpanded = expandedInvoiceIds.has(inv.id);
-        const invKg = inv.lineItems.reduce((s, li) => s + li.totalWeightKg, 0);
+        const invMT = inv.lineItems.reduce((s, li) => s + li.totalWeightMT, 0);
         const itemRows = isExpanded ? `<div class="sh-inv-items">
-            <table class="sh-inv-table"><thead><tr><th>Product</th><th>Qty</th><th>Unit Wt.</th><th>Total Wt.</th></tr></thead>
-            <tbody>${inv.lineItems.map(li => `<tr><td>${li.product}</td><td>${li.qty}</td><td>${formatKg(li.unitWeightKg)}</td><td style="font-weight:600;">${formatKg(li.totalWeightKg)}</td></tr>`).join('')}</tbody></table>
+            <div class="data-table-wrapper" style="margin-bottom:var(--sp-3);border-radius:var(--radius-md);">
+            <table class="data-table"><thead><tr>
+                <th><span class="th-content">Part Name</span></th>
+                <th><span class="th-content">No. of Pieces</span></th>
+                <th><span class="th-content">Unit Price</span></th>
+                <th><span class="th-content">Weight (MT)</span></th>
+            </tr></thead>
+            <tbody>${inv.lineItems.map(li => `<tr>
+                <td style="font-weight:500;">${li.partName}</td>
+                <td>${li.numPieces}</td>
+                <td>${formatCurrency(li.unitPrice)}</td>
+                <td style="font-weight:600;color:var(--purple-700);">${formatMT(li.totalWeightMT)}</td>
+            </tr>`).join('')}</tbody></table>
+            </div>
             <div class="sh-inv-address"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Ship to: ${inv.shippingAddress}</div>
         </div>` : '';
 
@@ -96,7 +108,7 @@ function renderStep1() {
                     <div class="sh-inv-card__id">${inv.id}</div>
                     <div class="sh-inv-card__meta">${inv.customer} &bull; ${inv.orderNo} &bull; ${formatCurrency(inv.value)}</div>
                 </div>
-                <div class="sh-inv-card__weight">${formatKg(invKg)}</div>
+                <div class="sh-inv-card__weight">${formatMT(invMT)}</div>
                 <button class="sh-inv-expand" data-inv-id="${inv.id}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transform:rotate(${isExpanded ? 180 : 0}deg);transition:transform .2s"><polyline points="6 9 12 15 18 9"/></svg>
                     ${inv.lineItems.length} item${inv.lineItems.length !== 1 ? 's' : ''}
@@ -124,7 +136,7 @@ function renderStep1() {
         </div>
         <div class="sh-counter ${invoices > 0 ? 'sh-counter--active' : ''}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-            <span>${invoices > 0 ? `<strong>${invoices}</strong> invoice${invoices !== 1 ? 's' : ''}, <strong>${items}</strong> item${items !== 1 ? 's' : ''}, <strong>${formatKg(kg)}</strong>` : 'No invoices selected'}</span>
+            <span>${invoices > 0 ? `<strong>${invoices}</strong> invoice${invoices !== 1 ? 's' : ''}, <strong>${items}</strong> item${items !== 1 ? 's' : ''}, <strong>${formatMT(mt)}</strong>` : 'No invoices selected'}</span>
         </div>
         <div class="panel-footer">
             <div class="panel-footer__left"><button class="btn btn--ghost" disabled style="opacity:.4;">← Previous</button></div>
@@ -267,20 +279,32 @@ function renderStep2() {
 
 function renderStep3() {
     const selectedInvs = AVAILABLE_INVOICES.filter(i => selectedInvoiceIds.has(i.id));
-    const { kg } = calcTotals();
+    const { mt } = calcTotals();
 
     const invSections = selectedInvs.map(inv => {
-        const invKg = inv.lineItems.reduce((s, li) => s + li.totalWeightKg, 0);
+        const invMT = inv.lineItems.reduce((s, li) => s + li.totalWeightMT, 0);
         return `<div class="sh-review-inv">
             <div class="sh-review-inv__header">
                 <div><div style="font-weight:600;">${inv.id}</div><div style="font-size:0.8rem;color:var(--gray-500);">${inv.customer} &bull; ${inv.orderNo}</div></div>
-                <div style="font-size:0.85rem;color:var(--gray-600);margin-left:auto;">${formatKg(invKg)}</div>
+                <div style="font-size:0.85rem;color:var(--gray-600);margin-left:auto;">${formatMT(invMT)}</div>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
             <div class="sh-review-inv__body">
                 <div class="sh-inv-address" style="margin-bottom:var(--sp-3);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Ship to: ${inv.shippingAddress}</div>
-                <table class="sh-inv-table"><thead><tr><th>Product</th><th>Qty</th><th>Unit Wt.</th><th>Total Wt.</th></tr></thead>
-                <tbody>${inv.lineItems.map(li => `<tr><td>${li.product}</td><td>${li.qty}</td><td>${formatKg(li.unitWeightKg)}</td><td style="font-weight:600;">${formatKg(li.totalWeightKg)}</td></tr>`).join('')}</tbody></table>
+                <div class="data-table-wrapper" style="border-radius:var(--radius-md);">
+                <table class="data-table"><thead><tr>
+                    <th><span class="th-content">Part Name</span></th>
+                    <th><span class="th-content">No. of Pieces</span></th>
+                    <th><span class="th-content">Unit Price</span></th>
+                    <th><span class="th-content">Weight (MT)</span></th>
+                </tr></thead>
+                <tbody>${inv.lineItems.map(li => `<tr>
+                    <td style="font-weight:500;">${li.partName}</td>
+                    <td>${li.numPieces}</td>
+                    <td>${formatCurrency(li.unitPrice)}</td>
+                    <td style="font-weight:600;color:var(--purple-700);">${formatMT(li.totalWeightMT)}</td>
+                </tr>`).join('')}</tbody></table>
+                </div>
             </div>
         </div>`;
     }).join('');
@@ -326,7 +350,7 @@ function renderStep3() {
             </div>
             <div class="sh-weight-summary">
                 <div class="sh-weight-summary__label">Total Net Weight</div>
-                <div class="sh-weight-summary__value">${formatKg(kg)}</div>
+                <div class="sh-weight-summary__value">${formatMT(mt)}</div>
             </div>
         </div>
         <div class="panel-footer">
@@ -357,10 +381,10 @@ function renderStep3() {
         h.nextElementSibling?.classList.toggle('sh-review-inv__body--hidden');
         h.querySelector('svg')?.style.setProperty('transform', h.nextElementSibling?.classList.contains('sh-review-inv__body--hidden') ? 'rotate(-90deg)' : 'rotate(0)');
     }));
-    pc.querySelector('#createBtn').addEventListener('click', () => createShipment(kg));
+    pc.querySelector('#createBtn').addEventListener('click', () => createShipment(mt));
 }
 
-function createShipment(netKg) {
+function createShipment(netMT) {
     const invList = [...selectedInvoiceIds];
     const firstInv = AVAILABLE_INVOICES.find(i => i.id === invList[0]);
     if (editShipment) {
@@ -368,7 +392,7 @@ function createShipment(netKg) {
             invoiceIds: invList, transportMode, vehiclePlate: selectedVehicle,
             driverName: transportMode === 'Internal Fleet' ? selectedDriver : null,
             carrierName: transportMode === 'External Carrier' ? carrierName : undefined,
-            ewayBill, pickupDate, netWeightKg: netKg,
+            ewayBill, pickupDate, netWeightMT: netMT,
             customer: firstInv?.customer || editShipment.customer, status: 'Ready to Ship',
         });
         closePanel();
@@ -383,7 +407,7 @@ function createShipment(netKg) {
             transportMode, vehiclePlate: selectedVehicle,
             driverName: transportMode === 'Internal Fleet' ? selectedDriver : null,
             carrierName: transportMode === 'External Carrier' ? carrierName : undefined,
-            ewayBill, pickupDate, netWeightKg: netKg, grossWeightKg: null,
+            ewayBill, pickupDate, netWeightMT: netMT, grossWeightMT: null,
             status: 'Ready to Ship', priority: 'Normal',
             timeline: [
                 { event: 'Shipment Created', date: new Date().toLocaleString('en-GB'), by: 'Priya M', done: true },
@@ -398,7 +422,7 @@ function createShipment(netKg) {
 }
 
 function saveDraft() {
-    const { kg } = calcTotals();
+    const { mt } = calcTotals();
     const invList = [...selectedInvoiceIds];
     const firstInv = AVAILABLE_INVOICES.find(i => i.id === invList[0]);
     if (!editShipment) {
@@ -409,7 +433,7 @@ function saveDraft() {
             customer: firstInv?.customer || '—',
             destination: firstInv?.shippingAddress?.split(',').slice(-2).join(',').trim() || '—',
             transportMode: null, vehiclePlate: null, driverName: null, ewayBill: null, pickupDate: null,
-            netWeightKg: kg, grossWeightKg: null, status: 'Draft', priority: 'Normal',
+            netWeightMT: mt, grossWeightMT: null, status: 'Draft', priority: 'Normal',
             timeline: [{ event: 'Draft Saved', date: new Date().toLocaleString('en-GB'), by: 'Priya M', done: true }]
         });
     }

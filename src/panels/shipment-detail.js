@@ -13,7 +13,7 @@ export function renderShipmentDetail(shipment, refresh) {
     drawDetail();
 }
 
-function formatKg(kg) { return kg != null ? new Intl.NumberFormat('en-IN').format(kg) + ' kg' : '—'; }
+function formatMT(mt) { return mt != null ? new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(mt) + ' MT' : '—'; }
 
 function statusBadge(status) {
     const map = { 'Draft': 'badge--sh-draft', 'Ready to Ship': 'badge--sh-ready', 'In Transit': 'badge--sh-in-transit', 'Delivered': 'badge--sh-delivered', 'Cancelled': 'badge--sh-cancelled' };
@@ -32,7 +32,7 @@ function drawDetail() {
     const actionsHtml = (canCancel || canEdit || canGrossWeight) ? `
         <div style="display:flex;gap:var(--sp-3);flex-wrap:wrap;">
             ${canCancel ? `<button class="btn btn--danger-outline" id="cancelShBtn">Cancel Shipment</button>` : ''}
-            ${canGrossWeight && !sh.grossWeightKg ? `<button class="btn btn--outline" id="addGrossBtn">
+            ${canGrossWeight && !sh.grossWeightMT ? `<button class="btn btn--outline" id="addGrossBtn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Add Gross Weight
             </button>` : ''}
@@ -62,18 +62,18 @@ function drawDetail() {
         <div class="sh-detail-weights">
             <div class="sh-detail-weight-item">
                 <div class="kv-label">Net Weight</div>
-                <div class="kv-value sh-detail-weight-val">${formatKg(sh.netWeightKg)}</div>
+                <div class="kv-value sh-detail-weight-val">${formatMT(sh.netWeightMT)}</div>
                 <div style="font-size:0.72rem;color:var(--gray-400);">From invoice items</div>
             </div>
-            ${sh.grossWeightKg ? `
+            ${sh.grossWeightMT ? `
             <div class="sh-detail-weight-divider"></div>
             <div class="sh-detail-weight-item">
                 <div class="kv-label">Gross Weight</div>
-                <div class="kv-value sh-detail-weight-val sh-gross-val">${formatKg(sh.grossWeightKg)}</div>
+                <div class="kv-value sh-detail-weight-val sh-gross-val">${formatMT(sh.grossWeightMT)}</div>
                 <div style="font-size:0.72rem;color:var(--gray-400);">From weighbridge</div>
             </div>` : ''}
         </div>
-        ${(!sh.grossWeightKg && s === 'Ready to Ship') ? `<div style="font-size:0.8rem;color:var(--orange-600);margin-top:var(--sp-2);">Gross weight not yet recorded.</div>` : ''}
+        ${(!sh.grossWeightMT && s === 'Ready to Ship') ? `<div style="font-size:0.8rem;color:var(--orange-600);margin-top:var(--sp-2);">Gross weight not yet recorded.</div>` : ''}
     `;
 
     // ── Timeline ───────────────────────────────────────────────────────────
