@@ -275,11 +275,14 @@ function buildStep3() {
         <table class="data-table">
           <thead>
             <tr>
-              <th>Coil No.</th><th>Grade</th><th>Thickness</th><th>Width</th><th>Surface</th><th>Coating</th><th>Current Weight</th>
+              <th>Coil No.</th><th>Grade</th><th>Thickness</th><th>Width</th><th>Surface</th><th>Coating</th><th>Current Weight</th><th>Weight after invoice</th>
             </tr>
           </thead>
           <tbody>
-            ${fd.selectedCoils.map(c => `
+            ${fd.selectedCoils.map(c => {
+    const allocated = (fd.materials[c.id] || []).reduce((sum, p) => p.isSelected ? sum + (p.inputWeight || 0) : sum, 0);
+    const weightAfter = c.currentWeightMT - allocated;
+    return `
               <tr>
                 <td><strong>${c.id}</strong></td>
                 <td>${c.grade}</td>
@@ -288,8 +291,9 @@ function buildStep3() {
                 <td>${c.surface}</td>
                 <td>${c.coating}</td>
                 <td>${c.currentWeightMT} MT</td>
-              </tr>
-            `).join('')}
+                <td id="weightAfter-${c.id}" style="font-weight:600; color:${weightAfter < 0 ? 'var(--red-500)' : 'var(--green-600)'}">${weightAfter.toFixed(3)} MT</td>
+              </tr>`;
+  }).join('')}
           </tbody>
         </table>
       </div>
@@ -363,13 +367,13 @@ function buildStep3() {
               <td colspan="7" style="padding:var(--sp-2) var(--sp-4) var(--sp-4) 48px">
                 <div style="background:#fff;border:1px solid var(--purple-200);border-radius:var(--radius-md);padding:var(--sp-3) var(--sp-4);display:flex;gap:var(--sp-5);align-items:center;">
                   <div class="form-group" style="margin:0;width:140px">
-                    <label class="form-label" style="font-size:0.75rem">No. of Pieces / Slits <span class="required">*</span></label>
+                    <label class="form-label" style="font-size:0.75rem">No. of Pieces / Slits</label>
                     <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputPieces" value="${p.inputPieces || ''}" max="${p.totalPieces}" min="0" />
                     <div style="font-size:0.7rem;color:var(--gray-500);margin-top:2px">Max: ${p.totalPieces} pcs</div>
                   </div>
                   <div class="form-group" style="margin:0;width:140px">
-                    <label class="form-label" style="font-size:0.75rem">Weight (Auto-calc MT)</label>
-                    <input type="text" class="form-input" readonly style="background:var(--gray-50)" value="${p.inputWeight ? p.inputWeight.toFixed(3) : '—'}" />
+                    <label class="form-label" style="font-size:0.75rem">Weight (MT) <span class="required">*</span></label>
+                    <input type="number" class="form-input config-inp" data-coil="${coil.id}" data-idx="${idx}" data-field="inputWeight" value="${p.inputWeight || ''}" step="0.001" />
                   </div>
                   <div class="form-group" style="margin:0;width:140px">
                     <label class="form-label" style="font-size:0.75rem">Price Per MT (₹) <span class="required">*</span></label>
@@ -672,10 +676,7 @@ function saveStep() {
 
 // ─── Recalculate a Part ───────────────────────────────────────────────────────
 function recalcPart(p) {
-  if (!p.isLeftover) {
-    p.inputWeight = p.inputPieces * (p.unitWeight || 0);
-  }
-  p.lineTotal = p.inputWeight * p.inputPrice;
+  p.lineTotal = (p.inputWeight || 0) * (p.inputPrice || 0);
 }
 
 // ─── Bind Step Events ─────────────────────────────────────────────────────────
@@ -724,7 +725,7 @@ function bindStep() {
         if (!p) return;
         p[inp.dataset.field] = parseFloat(inp.value) || 0;
         recalcPart(p);
-        // Live-update just the line total display without full redraw (prevent focus loss)
+        // Live-update line total display
         const rowCells = document.querySelectorAll(`.part-cb[data-coil="${cId}"][data-idx="${idx}"]`);
         rowCells.forEach(el => {
           const row = el.closest('tr');
@@ -733,6 +734,18 @@ function bindStep() {
           if (totalCell) totalCell.style.color = p.lineTotal > 0 ? 'var(--gray-900)' : 'var(--gray-400)';
           if (totalCell) totalCell.style.fontWeight = '600';
         });
+
+        // Live-update "Weight after invoice" in the summary table
+        const summaryCell = document.getElementById(`weightAfter-${cId}`);
+        if (summaryCell) {
+          const coil = fd.selectedCoils.find(c => c.id === cId);
+          if (coil) {
+            const allocated = (fd.materials[cId] || []).reduce((sum, part) => part.isSelected ? sum + (part.inputWeight || 0) : sum, 0);
+            const weightAfter = coil.currentWeightMT - allocated;
+            summaryCell.innerHTML = `${weightAfter.toFixed(3)} MT`;
+            summaryCell.style.color = weightAfter < 0 ? 'var(--red-500)' : 'var(--green-600)';
+          }
+        }
       });
       // Full redraw only on blur (to refresh derived fields like weight/pieces display)
       inp.addEventListener('blur', () => { drawStep(); });

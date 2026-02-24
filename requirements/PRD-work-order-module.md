@@ -235,40 +235,37 @@ Slitting = cutting a coil longitudinally into **narrower coils** of varying widt
 ### US-WO-05: Output Planning — Slitting + Cutting Operation
 
 **As a** Production Manager,  
-**I want to** plan combined slitting and cutting outputs in one step — entering only the desired sheet width, sheet length, and number of pieces — and have the system derive the intermediate slitting outputs automatically,  
-**So that** I don't have to manually plan two sets of outputs in sequence for complex orders.
+**I want to** plan combined slitting and cutting outputs in two sequential sub-steps — first defining the slitting outputs and then specifying the cutting outputs for each slit,  
+**So that** I have full traceability and control over which slit coil is being used for each set of sheets.
 
 #### 4.5.1 Background
 
-Slitting + Cutting = the coil is first slit into narrower coils and those are then cut into sheets. The user thinks in terms of final output (sheet with width W and length L), but the system must also track the intermediate slit coils.
+Slitting + Cutting = the coil is first slit into narrower coils and those are then cut into sheets. This is handled as a **two-part sequential wizard step**:
+1.  **Sub-step 3A (Slitting):** Identical to the Slitting-only planning flow. User defines the longitudinal slits.
+2.  **Sub-step 3B (Cutting):** User defines the cut sheets. A "From Slit" dropdown identifies which of the slits defined in 3A is the source for that specific cutting output.
 
-**Auto-derivation logic:**
-
-- Input: Width (W), Length (L), Qty (N pieces) per output row.
-- Slitting output: Part (slit coil) of width W, quantity = ceil(N × L / coil_length).
-- Cutting output: Sheet of W × L, N pieces, sourced from the slit part above.
+Navigation between these sub-steps is strictly handled by the main **Next** and **Previous** footer buttons.
 
 #### 4.5.2 Requirements
 
 | ID | Requirement | Priority |
 |---|---|---|
-| WO-REQ-038 | User inputs per output row: Part Name, Source Coil (dropdown), Target Width (mm), Target Length (mm), Number of Pieces. | Must Have |
-| WO-REQ-039 | System auto-calculates: Weight (MT), Leftover % per coil. | Must Have |
-| WO-REQ-040 | System auto-generates corresponding **Slitting outputs** table (Part, Coil No., Width, No. of Slit Coils) based on the combined outputs. | Must Have |
-| WO-REQ-041 | System auto-generates corresponding **Cutting outputs** table (From Slit, Coil No., Part Name, Width, Length, No. of Pieces) based on the combined outputs. | Must Have |
-| WO-REQ-042 | The Slitting table and Cutting table shall both be displayed on the Output Planning screen in separate, clearly labelled sections. | Must Have |
-| WO-REQ-043 | Total Output Width (Slitting) and Total Length Required (Cutting) shall be validated against coil dimensions. Errors shown inline. | Must Have |
-| WO-REQ-044 | Leftover Coil %, Total Pieces, Total Width, and Total Length shall update after each output row addition or edit. | Must Have |
-| WO-REQ-045 | For the Cutting sub-table, each row shows: From Slit (Part Name), Coil No., Part Name (user fills), Width (auto from slit width), Length, No. of Pieces, Weight (auto), Leftover % (auto). | Must Have |
+| WO-REQ-038 | The Slitting + Cutting flow shall be split into two sub-steps (3A: Slitting, 3B: Cutting). | Must Have |
+| WO-REQ-039 | Sub-step 3A (Slitting) shall allow adding slitting outputs (Part Name, Width, No. of Slits) identical to the Slitting-only flow. | Must Have |
+| WO-REQ-040 | Clicking "Next" on Sub-step 3A shall transition the user to Sub-step 3B (Cutting) ONLY if at least one slitting output is defined. | Must Have |
+| WO-REQ-041 | Sub-step 3B (Cutting) shall display a **Slitting Outputs Reference** panel showing all slits planned in 3A. | Must Have |
+| WO-REQ-042 | Sub-step 3B (Cutting) output rows shall accept: From Slit (dropdown of Part Names from 3A), Part Name, Target Length, and Number of Pieces. | Must Have |
+| WO-REQ-043 | Clicking "Previous" on Sub-step 3B shall return the user to Sub-step 3A. | Must Have |
+| WO-REQ-044 | System shall auto-calculate: Weight (MT), Leftover % for all outputs in both sub-steps. | Must Have |
+| WO-REQ-045 | Combined validation: Total slit width must not exceed parent width, and total length of cuts per slit must not exceed parent coil length. | Must Have |
 
 #### 4.5.3 Acceptance Criteria
 
-- [ ] Entering one combined output row (width, length, pieces) automatically populates one Slitting row and one Cutting row.
-- [ ] User can enter a custom part name for the cutting output; slitting part name is system-generated based on the parent output.
-- [ ] Multiple output rows create multiple corresponding Slitting and Cutting table rows.
-- [ ] The system correctly groups multiple outputs from the same slit coil under that slit coil's row.
-- [ ] All summary figures for both Slitting and Cutting sections update correctly on output change.
-- [ ] Validation prevents total slit widths from exceeding coil width and total cut lengths from exceeding slit coil length.
+- [ ] Transition between Slitting (3A) and Cutting (3B) is handled by the main Next/Previous wizard buttons.
+- [ ] User cannot proceed to Cutting until at least one slitting output is added.
+- [ ] In the Cutting step, the "From Slit" dropdown contains only the slits defined in the previous sub-step.
+- [ ] Changing a slit's width in 3A correctly reflects in the 3B reference panel and output rows.
+- [ ] Final Review step displays both Slitting and Cutting tables in separate sections.
 
 ---
 

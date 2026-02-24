@@ -17,9 +17,9 @@ function resetFD() {
     widthMin: '', widthMax: '', coating: '', surface: '', quantityDemand: '',
     operations: [], // ['Slitting'] | ['Cutting'] | ['Slitting','Cutting']
     selectedCoils: [],
-    slittingOutputs: [], // { id, partName, coilId, width, numCoils, weightMT, leftoverPct }
-    cuttingOutputs: [], // { id, partName, coilId, length, numPieces, weightMT, leftoverPct }
-    comboInputs: [], // for Slitting+Cutting: raw user inputs { id, coilId, width, length, numPieces, partName, weightMT, leftoverPct }
+    slittingOutputs: [], // { partName, coilId, width, numCoils, weightMT, leftoverPct }
+    cuttingOutputs: [], // { partName, coilId, length, numPieces, weightMT, leftoverPct, fromSlitIdx }
+    slitCutSubStep: 'slitting', // 'slitting' | 'cutting'  — only used when ops = Slitting+Cutting
     lineAssignments: {}, machineAssignments: {},
   };
 }
@@ -92,8 +92,32 @@ function drawStep() {
 
   setTimeout(() => {
     document.getElementById('panelClose')?.addEventListener('click', closePanel);
-    document.getElementById('prevBtn')?.addEventListener('click', () => { if (currentStep > 1) { saveStep(); currentStep--; drawStep(); } });
-    document.getElementById('nextBtn')?.addEventListener('click', () => { saveStep(); currentStep++; drawStep(); });
+    document.getElementById('prevBtn')?.addEventListener('click', () => {
+      const ops = fd.operations;
+      if (currentStep === 3 && ops.includes('Slitting') && ops.includes('Cutting') && fd.slitCutSubStep === 'cutting') {
+        fd.slitCutSubStep = 'slitting';
+        drawStep();
+      } else if (currentStep > 1) {
+        saveStep();
+        currentStep--;
+        drawStep();
+      }
+    });
+    document.getElementById('nextBtn')?.addEventListener('click', () => {
+      const ops = fd.operations;
+      if (currentStep === 3 && ops.includes('Slitting') && ops.includes('Cutting') && fd.slitCutSubStep === 'slitting') {
+        if (fd.slittingOutputs.length === 0) {
+          showToast('Requirement', 'Add at least one slitting output', 'error');
+          return;
+        }
+        fd.slitCutSubStep = 'cutting';
+        drawStep();
+      } else {
+        saveStep();
+        currentStep++;
+        drawStep();
+      }
+    });
     document.getElementById('saveDraftBtn')?.addEventListener('click', () => showToast('Saved as Draft', 'Work order saved as draft'));
     document.getElementById('submitBtn')?.addEventListener('click', () => { saveStep(); showSuccessInPanel(); });
     bindStep();
@@ -280,7 +304,9 @@ function buildStep2() {
 // ─── STEP 3: Planned Outputs ───
 function buildStep3() {
   const ops = fd.operations;
-  if (ops.includes('Slitting') && ops.includes('Cutting')) return buildStep3SlitCut();
+  if (ops.includes('Slitting') && ops.includes('Cutting')) {
+    return fd.slitCutSubStep === 'cutting' ? buildStep3SlitCutCutting() : buildStep3SlitCutSlitting();
+  }
   if (ops.includes('Slitting')) return buildStep3Slitting();
   if (ops.includes('Cutting')) return buildStep3Cutting();
   return `<div style="color:var(--gray-400)">Please select operations in Step 1 first.</div>`;
@@ -382,105 +408,130 @@ function buildStep3Cutting() {
     </div>` : ''}`;
 }
 
-// ─ Slitting + Cutting: user inputs (width, length, pieces) stay visible alongside derived outputs ─
-function buildStep3SlitCut() {
-  const coilOpts = fd.selectedCoils.map(c => `<option value="${c.id}">${c.id} (${c.widthMm}mm × ${calcCoilLengthM(c.currentWeightMT, c.thicknessMm, c.widthMm).toFixed(1)}m)</option>`).join('');
-
-  // Build combined rows showing: user input + auto-derived slit + auto-derived cut outputs
-  const comboRows = fd.comboInputs.map((inp, i) => {
-    const coil = fd.selectedCoils.find(c => c.id === inp.coilId) || {};
-    return `
-      <div class="card" style="margin-bottom:var(--sp-3);border-left:3px solid var(--purple-300)">
-        <div class="card__body" style="padding:var(--sp-3) var(--sp-4)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)">
-            <span style="font-weight:600;font-size:0.9rem">Output ${i + 1} — ${inp.partName}</span>
-            <div style="display:flex;gap:var(--sp-2)">
-              <button class="btn btn--outline btn--sm combo-edit-btn" data-idx="${i}">Edit</button>
-              <button class="btn btn--danger-outline btn--sm combo-del-btn" data-idx="${i}">Delete</button>
-            </div>
-          </div>
-          <!-- User Inputs Row -->
-          <div style="background:var(--purple-50);border-radius:var(--radius-md);padding:var(--sp-3);margin-bottom:var(--sp-3)">
-            <div style="font-size:0.75rem;font-weight:600;color:var(--purple-700);margin-bottom:var(--sp-2)">Your Input</div>
-            <div class="kv-grid kv-grid--4col">
-              <div class="kv-item"><div class="kv-label">Coil</div><div class="kv-value">${inp.coilId}</div></div>
-              <div class="kv-item"><div class="kv-label">Width</div><div class="kv-value">${inp.width} mm</div></div>
-              <div class="kv-item"><div class="kv-label">Length</div><div class="kv-value">${inp.length} m</div></div>
-              <div class="kv-item"><div class="kv-label">No. of Pieces</div><div class="kv-value">${inp.numPieces}</div></div>
-            </div>
-          </div>
-          <!-- Auto-Derived Outputs: stacked vertically, not side by side -->
-          <div style="display:flex;flex-direction:column;gap:var(--sp-3)">
-            <div>
-              <div style="font-size:0.75rem;font-weight:600;color:var(--gray-600);margin-bottom:var(--sp-2)">→ Slitting Output</div>
-              <table class="output-table">
-                <thead><tr><th>Part Name</th><th>Width (mm)</th><th>Slit Coils</th><th>Weight (MT)</th><th>Leftover %</th></tr></thead>
-                <tbody><tr>
-                  <td>${inp.slitPartName}</td><td>${inp.width} mm</td><td>1</td>
-                  <td>${inp.slitWeightMT.toFixed(3)}</td><td class="red-text">${inp.slitLeftoverPct.toFixed(1)}%</td>
-                </tr></tbody>
-              </table>
-            </div>
-            <div>
-              <div style="font-size:0.75rem;font-weight:600;color:var(--gray-600);margin-bottom:var(--sp-2)">→ Cutting Output (from ${inp.slitPartName})</div>
-              <table class="output-table">
-                <thead><tr><th>Part Name</th><th>Width (mm)</th><th>Length (m)</th><th>Pieces</th><th>Weight (MT)</th><th>Leftover %</th></tr></thead>
-                <tbody><tr>
-                  <td>${inp.cutPartName}</td><td>${inp.width} mm</td><td>${inp.length} m</td><td>${inp.numPieces}</td>
-                  <td>${inp.cutWeightMT.toFixed(3)}</td><td class="red-text">${inp.cutLeftoverPct.toFixed(1)}%</td>
-                </tr></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="kv-item" style="margin-top:var(--sp-2)"><div class="kv-label">Total Weight</div><div class="kv-value">${inp.weightMT.toFixed(3)} MT &nbsp; Leftover: <span class="text-red">${inp.leftoverPct.toFixed(1)}%</span></div></div>
-        </div>
-      </div>`;
-  }).join('');
-
-  const totalPcs = fd.comboInputs.reduce((s, o) => s + o.numPieces, 0);
-  const totalWidth = fd.comboInputs.reduce((s, o) => s + parseFloat(o.width), 0);
-  const totalLen = fd.comboInputs.reduce((s, o) => s + o.length * o.numPieces, 0).toFixed(2);
-  const lastLeftover = fd.comboInputs.length > 0 ? fd.comboInputs[fd.comboInputs.length - 1].leftoverPct.toFixed(1) : '0.0';
+// ─ Slitting + Cutting — Sub-step A: Slitting Outputs ─
+function buildStep3SlitCutSlitting() {
+  // Sub-step A: Slitting outputs — identical to slitting-only
+  const coilOpts = fd.selectedCoils.map(c => `<option value="${c.id}">${c.id} (${c.widthMm}mm wide)</option>`).join('');
+  const tableHtml = buildSlittingTable(fd.slittingOutputs, true, true);
+  const totalWidth = calcTotalOutputWidth(fd.slittingOutputs);
+  const coil = fd.selectedCoils[0];
+  const coilW = coil?.widthMm || 0;
+  const leftoverW = Math.max(0, coilW - totalWidth);
+  const leftoverPct = coilW > 0 ? ((leftoverW / coilW) * 100).toFixed(1) : '0.0';
+  const totalPcs = fd.slittingOutputs.reduce((s, o) => s + o.numCoils, 0);
 
   return `
-    <div class="section-title">Planned Outputs — Slitting + Cutting</div>
-    ${comboRows}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)">
+      <div class="section-title" style="margin-bottom:0">Step 1 of 2 — Slitting Outputs</div>
+      <span style="font-size:0.8rem;color:var(--gray-500)">Define all slit coils before proceeding to cutting outputs</span>
+    </div>
+    ${tableHtml}
     <div class="card" style="margin-bottom:var(--sp-4)">
-      <div class="card__header"><h3 class="card__title">Add Output</h3></div>
+      <div class="card__header"><h3 class="card__title">Add Slitting Output</h3></div>
       <div class="card__body">
         <div class="form-row form-row--2" style="margin-bottom:var(--sp-3)">
           <div class="form-group">
             <label class="form-label">Coil <span class="required">*</span></label>
-            <select class="form-select" id="comboCoilId"><option value="">Select coil</option>${coilOpts}</select>
+            <select class="form-select" id="slitCoilId"><option value="">Select coil</option>${coilOpts}</select>
           </div>
           <div class="form-group">
             <label class="form-label">Part Name <span class="required">*</span></label>
-            <input class="form-input" type="text" id="comboPartName" placeholder="e.g. Sheet A" />
+            <input class="form-input" type="text" id="slitPartName" placeholder="e.g. Slit A" />
           </div>
         </div>
-        <div class="form-row form-row--3">
+        <div class="form-row form-row--2">
           <div class="form-group">
-            <label class="form-label">Width (mm) <span class="required">*</span></label>
-            <input class="form-input" type="number" id="comboWidth" min="1" />
+            <label class="form-label">Target Width (mm) <span class="required">*</span></label>
+            <input class="form-input" type="number" id="slitWidth" min="1" />
           </div>
           <div class="form-group">
-            <label class="form-label">Length (m) <span class="required">*</span></label>
-            <input class="form-input" type="number" id="comboLength" min="0.1" step="0.1" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">No. of Pieces <span class="required">*</span></label>
-            <input class="form-input" type="number" id="comboNumPieces" value="1" min="1" />
+            <label class="form-label">Number of Slit Coils <span class="required">*</span></label>
+            <input class="form-input" type="number" id="slitNumCoils" value="1" min="1" />
           </div>
         </div>
       </div>
     </div>
-    <button class="add-output-btn" id="addComboBtn">+ Add Output</button>
-    ${fd.comboInputs.length > 0 ? `
-    <div class="summary-bar summary-bar--4" style="margin-top:var(--sp-4)">
-      <div class="kv-item"><div class="kv-label">Leftover Coil %</div><div class="kv-value text-red">${lastLeftover}%</div></div>
+    <button class="add-output-btn" id="addSlitBtn">+ Add Slitting Output</button>
+    ${fd.slittingOutputs.length > 0 ? `
+    <div class="summary-bar summary-bar--3" style="margin-top:var(--sp-4)">
+      <div class="kv-item"><div class="kv-label">Leftover Coil %</div><div class="kv-value text-red">${leftoverPct}%</div></div>
+      <div class="kv-item"><div class="kv-label">Total Width Used</div><div class="kv-value">${totalWidth} mm</div></div>
+      <div class="kv-item"><div class="kv-label">Total Slit Coils</div><div class="kv-value">${totalPcs}</div></div>
+    </div>` : `<div style="margin-top:var(--sp-3);padding:var(--sp-3);background:var(--amber-50);border:1px solid var(--amber-200);border-radius:var(--radius-md);font-size:0.85rem;color:var(--amber-800)">⚠ Add at least one slitting output before proceeding to cutting.</div>`}`;
+}
+
+// ─ Slitting + Cutting — Sub-step B: Cutting Outputs (with slit reference + From Slit dropdown) ─
+function buildStep3SlitCutCutting() {
+  // Reference panel: show all defined slitting outputs
+  const slitRefRows = fd.slittingOutputs.map((o, i) => `<tr>
+    <td><span class="badge badge--in-progress" style="font-size:0.75rem">#${i + 1}</span></td>
+    <td>${o.partName}</td><td>${o.coilId}</td><td>${o.width} mm</td><td>${o.numCoils}</td><td>${o.weightMT.toFixed(3)} MT</td>
+  </tr>`).join('');
+
+  const slitRefPanel = `
+    <div class="card" style="margin-bottom:var(--sp-4);border-left:3px solid var(--purple-400)">
+      <div class="card__header" style="background:var(--purple-50)">
+        <h3 class="card__title" style="color:var(--purple-700)">📋 Slitting Outputs Reference</h3>
+        <span style="font-size:0.8rem;color:var(--purple-600)">Use these to specify which slit each cut comes from</span>
+      </div>
+      <div class="card__body" style="overflow-x:auto">
+        <table class="output-table">
+          <thead><tr><th>#</th><th>Part Name</th><th>Coil</th><th>Width</th><th>Slit Coils</th><th>Weight (MT)</th></tr></thead>
+          <tbody>${slitRefRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+
+  // From-slit dropdown options
+  const fromSlitOpts = fd.slittingOutputs.map((o, i) =>
+    `<option value="${i}">#${i + 1} — ${o.partName} (${o.width}mm wide)</option>`
+  ).join('');
+
+  // Cutting outputs table with fromSlit column
+  const cutTableHtml = buildCuttingTableWithSlit(fd.cuttingOutputs, true, true);
+  const totalPcs = fd.cuttingOutputs.reduce((s, o) => s + o.numPieces, 0);
+  const totalLenM = fd.cuttingOutputs.reduce((s, o) => s + o.length * o.numPieces, 0).toFixed(2);
+  const lastLeftover = fd.cuttingOutputs.length > 0 ? fd.cuttingOutputs[fd.cuttingOutputs.length - 1].leftoverPct.toFixed(1) : '0.0';
+
+  return `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-3)">
+      <div class="section-title" style="margin-bottom:0">Step 2 of 2 — Cutting Outputs</div>
+    </div>
+    ${slitRefPanel}
+    ${cutTableHtml}
+    <div class="card" style="margin-bottom:var(--sp-4)">
+      <div class="card__header"><h3 class="card__title">Add Cutting Output</h3></div>
+      <div class="card__body">
+        <div class="form-row form-row--2" style="margin-bottom:var(--sp-3)">
+          <div class="form-group">
+            <label class="form-label">From Slit <span class="required">*</span></label>
+            <select class="form-select" id="cutFromSlit">
+              <option value="">Select slit coil</option>${fromSlitOpts}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Part Name <span class="required">*</span></label>
+            <input class="form-input" type="text" id="cutPartName" placeholder="e.g. Part C" />
+          </div>
+        </div>
+        <div class="form-row form-row--2">
+          <div class="form-group">
+            <label class="form-label">Target Length (m) <span class="required">*</span></label>
+            <input class="form-input" type="number" id="cutLength" min="0.1" step="0.1" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of Pieces <span class="required">*</span></label>
+            <input class="form-input" type="number" id="cutNumPieces" value="1" min="1" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="add-output-btn" id="addCutBtn">+ Add Cutting Output</button>
+    ${fd.cuttingOutputs.length > 0 ? `
+    <div class="summary-bar summary-bar--3" style="margin-top:var(--sp-4)">
+      <div class="kv-item"><div class="kv-label">Overall Leftover Coil %</div><div class="kv-value text-red">${lastLeftover}%</div></div>
       <div class="kv-item"><div class="kv-label">Total Pieces</div><div class="kv-value">${totalPcs}</div></div>
-      <div class="kv-item"><div class="kv-label">Total Width</div><div class="kv-value">${totalWidth} mm</div></div>
-      <div class="kv-item"><div class="kv-label">Total Length</div><div class="kv-value">${totalLen} m</div></div>
+      <div class="kv-item"><div class="kv-label">Total Length Required</div><div class="kv-value">${totalLenM} m</div></div>
     </div>` : ''}`;
 }
 
@@ -524,38 +575,12 @@ function buildStep5() {
     ? `<h4 style="margin-bottom:var(--sp-2)">Slitting Outputs</h4>${buildSlittingTable(fd.slittingOutputs, false, false)}<br>`
     : '';
   const cutTable = fd.cuttingOutputs.length > 0
-    ? `<h4 style="margin-bottom:var(--sp-2)">Cutting Outputs</h4>${buildCuttingTable(fd.cuttingOutputs, false, false)}`
+    ? `<h4 style="margin-bottom:var(--sp-2)">Cutting Outputs</h4>${fd.operations.includes('Slitting') && fd.operations.includes('Cutting')
+      ? buildCuttingTableWithSlit(fd.cuttingOutputs, false, false)
+      : buildCuttingTable(fd.cuttingOutputs, false, false)
+    }`
     : '';
-  // Review: combo outputs as proper data grids, split into slitting + cutting tables
-  let comboSlitRows = '', comboCutRows = '';
-  if (fd.comboInputs.length > 0) {
-    comboSlitRows = fd.comboInputs.map(inp => `<tr>
-      <td>${inp.slitPartName}</td><td>${inp.coilId}</td><td>${inp.width} mm</td><td>1</td>
-      <td>${inp.slitWeightMT.toFixed(3)}</td><td class="red-text">${inp.slitLeftoverPct.toFixed(1)}%</td>
-    </tr>`).join('');
-    comboCutRows = fd.comboInputs.map(inp => `<tr>
-      <td>${inp.cutPartName}</td><td>${inp.coilId}</td><td>${inp.length} m</td><td>${inp.numPieces}</td>
-      <td>${inp.cutWeightMT.toFixed(3)}</td><td class="red-text">${inp.cutLeftoverPct.toFixed(1)}%</td>
-    </tr>`).join('');
-  }
-  const comboSlitTable = comboSlitRows ? `
-    <h4 style="margin-bottom:var(--sp-2);margin-top:var(--sp-3)">Slitting Outputs</h4>
-    <div class="data-table-wrapper" style="margin-bottom:var(--sp-3)">
-      <table class="output-table">
-        <thead><tr><th>Part Name</th><th>Coil No.</th><th>Width</th><th>Slit Coils</th><th>Weight (MT)</th><th>Leftover %</th></tr></thead>
-        <tbody>${comboSlitRows}</tbody>
-      </table>
-    </div>` : '';
-  const comboCutTable = comboCutRows ? `
-    <h4 style="margin-bottom:var(--sp-2);margin-top:var(--sp-3)">Cutting Outputs</h4>
-    <div class="data-table-wrapper">
-      <table class="output-table">
-        <thead><tr><th>Part Name</th><th>Coil No.</th><th>Length (m)</th><th>Pieces</th><th>Weight (MT)</th><th>Leftover %</th></tr></thead>
-        <tbody>${comboCutRows}</tbody>
-      </table>
-    </div>` : '';
-  const comboOutputs = comboSlitTable + comboCutTable;
-  const outputSection = slitTable + cutTable + comboOutputs || '<div style="color:var(--gray-400)">No outputs added</div>';
+  const outputSection = slitTable + cutTable || '<div style="color:var(--gray-400)">No outputs added</div>';
 
   const machineRows = fd.operations.map(op => `
     <tr><td>${op}</td><td>${fd.lineAssignments[op] || '—'}</td><td>${fd.machineAssignments[op] || '—'}</td></tr>`
@@ -646,13 +671,41 @@ function buildCuttingTable(outputs, showEdit, showDelete) {
           <th>Part Name</th><th>Coil No.</th><th>Length (m)</th><th>Pieces</th><th>Weight (MT)</th><th>Leftover %</th>${extraCols}
         </tr></thead>
         <tbody>${outputs.map((o, i) => `<tr>
-          <td>${o.partName}</td><td>${o.coilId}</td><td>${o.length}</td><td>${o.numPieces}</td>
+          <td>${o.partName}</td><td>${o.coilId || '—'}</td><td>${o.length}</td><td>${o.numPieces}</td>
           <td>${o.weightMT.toFixed(3)}</td><td class="red-text">${o.leftoverPct.toFixed(1)}%</td>
           ${(showEdit || showDelete) ? `<td style="display:flex;gap:4px">
             ${showEdit ? `<button class="btn btn--outline btn--sm cut-edit-btn" data-idx="${i}">Edit</button>` : ''}
             ${showDelete ? `<button class="btn btn--danger-outline btn--sm cut-del-btn" data-idx="${i}">Delete</button>` : ''}
           </td>` : ''}
         </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+// Cutting table variant used in Slitting+Cutting sub-step B (adds 'From Slit' column)
+function buildCuttingTableWithSlit(outputs, showEdit, showDelete) {
+  if (!outputs.length) return '';
+  const extraCols = (showEdit || showDelete) ? '<th></th>' : '';
+  return `
+    <div class="data-table-wrapper" style="margin-bottom:var(--sp-4)">
+      <table class="output-table">
+        <thead><tr>
+          <th>From Slit</th><th>Part Name</th><th>Length (m)</th><th>Pieces</th><th>Width (mm)</th><th>Weight (MT)</th><th>Leftover %</th>${extraCols}
+        </tr></thead>
+        <tbody>${outputs.map((o, i) => {
+    const slitRef = fd.slittingOutputs[o.fromSlitIdx];
+    const slitLabel = slitRef ? `#${o.fromSlitIdx + 1} ${slitRef.partName}` : '—';
+    return `<tr>
+            <td><span class="badge badge--in-progress" style="font-size:0.75rem">${slitLabel}</span></td>
+            <td>${o.partName}</td><td>${o.length}</td><td>${o.numPieces}</td>
+            <td>${slitRef ? slitRef.width + ' mm' : '—'}</td>
+            <td>${o.weightMT.toFixed(3)}</td><td class="red-text">${o.leftoverPct.toFixed(1)}%</td>
+            ${(showEdit || showDelete) ? `<td style="display:flex;gap:4px">
+              ${showEdit ? `<button class="btn btn--outline btn--sm cut-edit-btn" data-idx="${i}">Edit</button>` : ''}
+              ${showDelete ? `<button class="btn btn--danger-outline btn--sm cut-del-btn" data-idx="${i}">Delete</button>` : ''}
+            </td>` : ''}
+          </tr>`;
+  }).join('')}</tbody>
       </table>
     </div>`;
 }
@@ -803,52 +856,76 @@ function bindStep() {
       });
     }
 
-    // Slitting + Cutting combo
-    if (ops.includes('Slitting') && ops.includes('Cutting')) {
-      document.getElementById('addComboBtn')?.addEventListener('click', () => {
-        const coilId = document.getElementById('comboCoilId')?.value;
-        const partName = document.getElementById('comboPartName')?.value?.trim();
-        const width = parseFloat(document.getElementById('comboWidth')?.value);
-        const length = parseFloat(document.getElementById('comboLength')?.value);
-        const numPieces = parseInt(document.getElementById('comboNumPieces')?.value) || 1;
-        if (!coilId || !partName || !width || !length) { showToast('Missing fields', 'Fill all required fields', 'error'); return; }
+    // Slitting + Cutting — sub-step A (Slitting) binders
+    if (ops.includes('Slitting') && ops.includes('Cutting') && fd.slitCutSubStep === 'slitting') {
+      document.getElementById('addSlitBtn')?.addEventListener('click', () => {
+        const coilId = document.getElementById('slitCoilId')?.value;
+        const partName = document.getElementById('slitPartName')?.value?.trim();
+        const width = parseFloat(document.getElementById('slitWidth')?.value);
+        const numCoils = parseInt(document.getElementById('slitNumCoils')?.value) || 1;
+        if (!coilId || !partName || !width) { showToast('Missing fields', 'Fill all required fields', 'error'); return; }
         const coil = fd.selectedCoils.find(c => c.id === coilId);
-        const thk = coil?.thicknessMm || 1;
-        const coilW = coil?.widthMm || 1;
-        const coilLenM = calcCoilLengthM(coil?.currentWeightMT || 0, thk, coilW);
-
-        // Slitting output: one slit coil of given width, coil length
-        const slitWeightMT = calcWeightMT(thk, width, coilLenM);
-        const usedSlitWidth = fd.comboInputs.reduce((s, o) => s + parseFloat(o.width), 0) + width;
-        const slitLeftoverPct = calcLeftoverPct(coilW, usedSlitWidth);
-        const slitPartName = `SL-${partName}`;
-
-        // Cutting output: from slit coil, cut to given length x numPieces
-        const cutWeightMT = calcWeightMT(thk, width, length) * numPieces;
-        const usedCutLen = length * numPieces;
-        const cutLeftoverPct = calcLeftoverPct(coilLenM, usedCutLen);
-        const cutPartName = `CT-${partName}`;
-
-        const totalWeightMT = slitWeightMT;
-        const leftoverPct = slitLeftoverPct;
-
-        fd.comboInputs.push({ coilId, partName, width, length, numPieces, weightMT: totalWeightMT, leftoverPct, slitPartName, slitWeightMT, slitLeftoverPct, cutPartName, cutWeightMT, cutLeftoverPct });
+        const coilW = coil?.widthMm || 0;
+        const slitLenM = calcCoilLengthM(coil?.currentWeightMT || 0, coil?.thicknessMm || 1, coil?.widthMm || 1);
+        const weightMT = calcWeightMT(coil?.thicknessMm || 1, width, slitLenM) * numCoils;
+        const usedWidth = calcTotalOutputWidth(fd.slittingOutputs) + width * numCoils;
+        const leftoverPct = calcLeftoverPct(coilW, usedWidth);
+        fd.slittingOutputs.push({ partName, coilId, width, numCoils, weightMT, leftoverPct });
         drawStep();
       });
-
-      document.querySelectorAll('.combo-del-btn').forEach(btn => {
-        btn.addEventListener('click', () => { fd.comboInputs.splice(parseInt(btn.dataset.idx), 1); drawStep(); });
+      document.querySelectorAll('.slit-del-btn').forEach(btn => {
+        btn.addEventListener('click', () => { fd.slittingOutputs.splice(parseInt(btn.dataset.idx), 1); drawStep(); });
       });
-      document.querySelectorAll('.combo-edit-btn').forEach(btn => {
+      document.querySelectorAll('.slit-edit-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const idx = parseInt(btn.dataset.idx);
-          const o = fd.comboInputs[idx];
-          document.getElementById('comboCoilId').value = o.coilId;
-          document.getElementById('comboPartName').value = o.partName;
-          document.getElementById('comboWidth').value = o.width;
-          document.getElementById('comboLength').value = o.length;
-          document.getElementById('comboNumPieces').value = o.numPieces;
-          fd.comboInputs.splice(idx, 1);
+          const o = fd.slittingOutputs[idx];
+          document.getElementById('slitCoilId').value = o.coilId;
+          document.getElementById('slitPartName').value = o.partName;
+          document.getElementById('slitWidth').value = o.width;
+          document.getElementById('slitNumCoils').value = o.numCoils;
+          fd.slittingOutputs.splice(idx, 1);
+          drawStep();
+        });
+      });
+    }
+
+    // Slitting + Cutting — sub-step B (Cutting) binders
+    if (ops.includes('Slitting') && ops.includes('Cutting') && fd.slitCutSubStep === 'cutting') {
+      document.getElementById('addCutBtn')?.addEventListener('click', () => {
+        const fromSlitIdx = parseInt(document.getElementById('cutFromSlit')?.value);
+        const partName = document.getElementById('cutPartName')?.value?.trim();
+        const length = parseFloat(document.getElementById('cutLength')?.value);
+        const numPieces = parseInt(document.getElementById('cutNumPieces')?.value) || 1;
+        if (isNaN(fromSlitIdx) || document.getElementById('cutFromSlit')?.value === '' || !partName || !length) {
+          showToast('Missing fields', 'Fill all required fields', 'error'); return;
+        }
+        const slitOut = fd.slittingOutputs[fromSlitIdx];
+        const coilId = slitOut?.coilId;
+        const coil = fd.selectedCoils.find(c => c.id === coilId);
+        const slitWidth = slitOut?.width || coil?.widthMm || 1;
+        const slitLenM = calcCoilLengthM(coil?.currentWeightMT || 0, coil?.thicknessMm || 1, coil?.widthMm || 1);
+        const weightMT = calcWeightMT(coil?.thicknessMm || 1, slitWidth, length) * numPieces;
+        const usedLen = fd.cuttingOutputs
+          .filter(o => o.fromSlitIdx === fromSlitIdx)
+          .reduce((s, o) => s + o.length * o.numPieces, 0) + length * numPieces;
+        const leftoverPct = calcLeftoverPct(slitLenM, usedLen);
+        fd.cuttingOutputs.push({ partName, coilId, length, numPieces, weightMT, leftoverPct, fromSlitIdx });
+        drawStep();
+      });
+      document.querySelectorAll('.cut-del-btn').forEach(btn => {
+        btn.addEventListener('click', () => { fd.cuttingOutputs.splice(parseInt(btn.dataset.idx), 1); drawStep(); });
+      });
+      document.querySelectorAll('.cut-edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx);
+          const o = fd.cuttingOutputs[idx];
+          const fromSlitEl = document.getElementById('cutFromSlit');
+          if (fromSlitEl) fromSlitEl.value = o.fromSlitIdx;
+          document.getElementById('cutPartName').value = o.partName;
+          document.getElementById('cutLength').value = o.length;
+          document.getElementById('cutNumPieces').value = o.numPieces;
+          fd.cuttingOutputs.splice(idx, 1);
           drawStep();
         });
       });

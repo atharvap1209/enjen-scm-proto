@@ -199,6 +199,7 @@ export const PRODUCTION_STAGES = [
     { id: 'STG-2024-008', woNumber: 'WO-2024-008', stageName: 'Cutting Stage 1', operationType: 'Cutting', machine: 'CUT-01', line: 'Cutting Line B', customer: 'JSW Steel Ltd', progress: 55, status: 'In Progress', priority: 'Medium', startTime: '20-11-2025 10:00', pauseTime: '--', resumeTime: '--' },
     { id: 'STG-2024-009', woNumber: 'WO-2024-009', stageName: 'Slitting Stage 1', operationType: 'Slitting', machine: 'SLT-01', line: 'Slitting Line B', customer: 'JSW Steel Ltd', progress: 100, status: 'Completed', priority: 'Low', startTime: '13-11-2025 06:30', pauseTime: '--', resumeTime: '--' },
     { id: 'STG-2024-010', woNumber: 'WO-2024-010', stageName: 'Slitting Stage 1', operationType: 'Slitting', machine: 'SLT-01', line: 'Slitting Line A', customer: 'Tata Steel', progress: 0, status: 'Pending', priority: 'High', startTime: '--', pauseTime: '--', resumeTime: '--' },
+    { id: 'STG-2024-011', woNumber: 'WO-2024-011', stageName: 'Slitting + Cutting Stage 1', operationType: 'Slitting+Cutting', machine: 'SLT-01', line: 'Slitting Line A', customer: 'Meenakshi Steel', progress: 40, status: 'In Progress', priority: 'High', startTime: '24-02-2026 08:00', pauseTime: '--', resumeTime: '--' },
 ];
 
 // Steel density in g/cm³

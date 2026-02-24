@@ -248,29 +248,29 @@ Production Process Module
 ### US-PP-06: Complete a Slitting + Cutting Stage — Capture Actuals & Variance
 
 **As a** Shift Supervisor,  
-**I want to** enter actuals for both the slitting and cutting steps within the same stage,  
-**So that** variance is captured at both the intermediate (slit) and final (sheet) output levels.
+**I want to** enter actuals for both the slitting and cutting operations within the same stage completion panel,  
+**So that** variance is captured at both the intermediate (slit) and final (sheet) output levels on a single screen.
 
 #### 5.6.1 Requirements
 
 | ID | Requirement | Priority |
 |---|---|---|
-| PP-REQ-035 | The Complete Stage panel for Slitting+Cutting shall display two separate actuals tables: **Slitting Output** and **Cutting Output**. | Must Have |
-| PP-REQ-036 | **Slitting Output table** columns: Part Name, Coil Number, Width (mm), No. of Slit Coils (planned), Weight MT (planned), Leftover % (planned), Actual Weight MT (user input), Actual Leftover % (auto-calc), Variance % (auto-calc). | Must Have |
-| PP-REQ-037 | **Cutting Output table** columns: Part Name, From Slit (Part Name), Coil Number, Width (mm), Length, No. of Pieces (planned), Weight MT (planned), Leftover % (planned), Actual No. of Pieces (user input), Actual Weight MT (user input), Actual Leftover % (auto-calc), Variance % (auto-calc). | Must Have |
-| PP-REQ-038 | "From Slit" in the Cutting table references the Part Name from the Slitting table — establishing traceability between slit coil and final sheet. | Must Have |
-| PP-REQ-039 | **Coil Status Table** reflects the combined utilisation from both sub-operations. | Must Have |
-| PP-REQ-040 | **"Mark Actual = Planned"** toggle is available independently per section (Slitting section and Cutting section). | Must Have |
-| PP-REQ-041 | Complete Stage CTA is disabled until all Actual Weight fields in both tables are filled. | Must Have |
+| PP-REQ-035 | The Complete Stage panel for Slitting+Cutting shall display two separate actuals tables simultaneously: **Slitting Actuals** and **Cutting Actuals**. | Must Have |
+| PP-REQ-036 | **Slitting Actuals table** columns: Part Name, Coil Number, Width (mm), No. of Slit Coils (planned), Weight MT (planned), Leftover % (planned), Actual Weight MT (user input), Actual Leftover % (auto-calc), Variance % (auto-calc). | Must Have |
+| PP-REQ-037 | **Cutting Actuals table** columns: From Slit (Part Name), Part Name, Coil Number, Width (mm), Length, No. of Pieces (planned), Weight MT (planned), Leftover % (planned), Actual No. of Pieces (user input), Actual Weight MT (user input), Actual Leftover % (auto-calc), Variance % (auto-calc). | Must Have |
+| PP-REQ-038 | "From Slit" in the Cutting table shall explicitly reference the Part Name from the Slitting plan, displayed as a reference badge for the operator. | Must Have |
+| PP-REQ-039 | **Coil Status Table** shall reflect the combined total weight utilized by both slitting and cutting outputs. | Must Have |
+| PP-REQ-040 | **"Mark Actual = Planned"** toggle shall be available independently for each section to allow quick-setting slitting actuals and cutting actuals separately. | Must Have |
+| PP-REQ-041 | Complete Stage CTA is disabled until every Actual Weight field in both the slitting and cutting tables is filled. | Must Have |
 
 #### 5.6.2 Acceptance Criteria
 
-- [ ] Both Slitting and Cutting output tables render independently with their own column sets.
-- [ ] "From Slit" column correctly shows the linked slit part name.
-- [ ] Mark Actual = Planned in Slitting section fills only slitting actuals; same for Cutting section.
-- [ ] Coil Status combines weights from both slitting and cutting outputs correctly.
-- [ ] Variance is computed separately per row in both tables.
-- [ ] Complete Stage is blocked if any field in either table is empty.
+- [ ] Both Slitting and Cutting output tables render simultaneously in the Complete Stage side panel.
+- [ ] "From Slit" column in the cutting table correctly displays the name of the source slit part for each row.
+- [ ] Mark Actual = Planned in the Slitting header only affects slitting rows; vice versa for Cutting.
+- [ ] Coil Status sums total actual weight from both tables against the parent coil.
+- [ ] Variance and Leftover % recalculate independently for every row across both tables.
+- [ ] Stage completion is blocked if any actual weight field in either table is empty.
 
 ---
 

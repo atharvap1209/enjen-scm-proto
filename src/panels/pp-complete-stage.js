@@ -7,15 +7,16 @@ import { renderStageDetails } from './pp-stage-details.js';
 export function renderCompleteStage(stage) {
   const isSlitting = stage.operationType === 'Slitting';
   const isCutting = stage.operationType === 'Cutting';
+  const isSlitCut = stage.operationType === 'Slitting+Cutting';
 
   // Mock planned outputs (in real app, these come from the WO's planned outputs for this stage)
   const slittingPlanned = [
-    { partName: 'Part A', coilNumber: 'COIL-001', width: 300, numCoils: 1, plannedWeight: 20, plannedLeftover: 20 },
-    { partName: 'Part B', coilNumber: 'COIL-001', width: 400, numCoils: 3, plannedWeight: 60, plannedLeftover: 10 },
+    { partName: 'Slit A', coilNumber: 'COIL-001', width: 300, numCoils: 1, plannedWeight: 20, plannedLeftover: 20 },
+    { partName: 'Slit B', coilNumber: 'COIL-001', width: 400, numCoils: 3, plannedWeight: 60, plannedLeftover: 10 },
   ];
   const cuttingPlanned = [
-    { partName: 'Part C', coilNumber: 'COIL-001', length: 6, numPieces: 100, plannedWeight: 30, plannedLeftover: 20 },
-    { partName: 'Part D', coilNumber: 'COIL-002', length: 8, numPieces: 200, plannedWeight: 50, plannedLeftover: 35 },
+    { partName: 'Part C', coilNumber: 'COIL-001', length: 6, numPieces: 100, plannedWeight: 30, plannedLeftover: 20, fromSlitIdx: 0, fromSlitName: 'Slit A' },
+    { partName: 'Part D', coilNumber: 'COIL-001', length: 8, numPieces: 200, plannedWeight: 50, plannedLeftover: 35, fromSlitIdx: 1, fromSlitName: 'Slit B' },
   ];
 
   // Coils involved in this stage
@@ -23,7 +24,7 @@ export function renderCompleteStage(stage) {
 
   let outputTableHtml = '';
 
-  if (isSlitting) {
+  if (isSlitting || isSlitCut) {
     outputTableHtml = `
       <div class="card" style="margin-bottom:var(--sp-4)">
         <div class="card__header" style="justify-content:space-between">
@@ -57,8 +58,8 @@ export function renderCompleteStage(stage) {
           </table>
         </div>
       </div>`;
-  } else if (isCutting) {
-    outputTableHtml = `
+  } else if (isCutting || isSlitCut) {
+    outputTableHtml += `
       <div class="card" style="margin-bottom:var(--sp-4)">
         <div class="card__header" style="justify-content:space-between">
           <h3 class="card__title">Planned Outputs — Cutting</h3>
@@ -69,6 +70,7 @@ export function renderCompleteStage(stage) {
         <div class="card__body" style="overflow-x:auto">
           <table class="output-table" id="cutActualsTable">
             <thead><tr>
+              ${isSlitCut ? '<th>From Slit</th>' : ''}
               <th>Part Name</th><th>Coil No.</th><th>Length (m)</th><th>Pieces</th>
               <th>Planned Weight (MT)</th><th>Planned Leftover %</th>
               <th style="background:var(--purple-50)">Actual Pieces</th>
@@ -78,6 +80,7 @@ export function renderCompleteStage(stage) {
             </tr></thead>
             <tbody>
               ${cuttingPlanned.map((o, i) => `<tr>
+                ${isSlitCut ? `<td><span class="badge badge--in-progress" style="font-size:0.75rem">#${o.fromSlitIdx + 1} ${o.fromSlitName}</span></td>` : ''}
                 <td>${o.partName}</td><td>${o.coilNumber}</td>
                 <td>${o.length} m</td><td>${o.numPieces}</td>
                 <td>${o.plannedWeight}</td><td>${o.plannedLeftover}%</td>
@@ -179,7 +182,7 @@ export function renderCompleteStage(stage) {
     document.getElementById('completeCancel')?.addEventListener('click', () => renderStageDetails(stage));
 
     // ─── Real-time calc for Slitting ───
-    if (isSlitting) {
+    if (isSlitting || isSlitCut) {
       // Mark Actual = Original
       document.getElementById('markActualSlit')?.addEventListener('change', e => {
         if (e.target.checked) {
@@ -197,7 +200,7 @@ export function renderCompleteStage(stage) {
     }
 
     // ─── Real-time calc for Cutting ───
-    if (isCutting) {
+    if (isCutting || isSlitCut) {
       document.getElementById('markActualCut')?.addEventListener('change', e => {
         if (e.target.checked) {
           cuttingPlanned.forEach((o, i) => {

@@ -58,8 +58,8 @@ A core imperative of this module is **extreme simplicity**. Users can invoice mu
 Invoice Creation (5-Step Wizard)
  ├── Step 1: Invoice Details (Header, Logistics, Addressing)
  ├── Step 2: Coil Selection (Searchable grid, column filtering, lazy load)
- ├── Step 3: Material Selection (Parts from selected Coils)
- │    ├── Selected Coils Detail Grid (Grade, Thickness, Width, Surface, Coating, Current Weight)
+  ├── Step 3: Material Selection (Parts from selected Coils)
+ │    ├── Selected Coils Detail Grid (Grade, Thickness, Width, Surface, Coating, Current Weight, Weight after invoice)
  │    ├── Flat Parts Selection Table (No accordions to reduce clutter)
  │    └── Leftover Coil weight sale
  ├── Step 4: Charges and Tax
@@ -134,11 +134,11 @@ Invoice Lifecycle
 
 | ID | Requirement | Priority |
 |---|---|---|
-| INV-REQ-010 | The Material Selection interface (Step 3) shall display a **Selected Coils** top grid providing a summary of parent coils, explicitly showing: Grade, Thickness, Width, Surface, Coating, Current Weight. | Must Have |
+| INV-REQ-010 | The Material Selection interface (Step 3) shall display a **Selected Coils** top grid providing a summary of parent coils, explicitly showing: Grade, Thickness, Width, Surface, Coating, Current Weight, and **Weight after invoice** (real-time remaining weight). | Must Have |
 | INV-REQ-011 | Beneath the Selected Coils Grid, a single flat table shall list all child parts belonging to selected coils. | Must Have |
-| INV-REQ-012 | **Sheet-based parts** (Cutting, Slit+Cut) shall mandatorily display: Part Name, Width, Length, Weight. | Must Have |
-| INV-REQ-013 | **Slit-based parts** (Slitting) shall mandatorily display: Part Name, Width, Weight. | Must Have |
-| INV-REQ-014 | **Leftover Coil** parts shall mandatorily display: Part Name, Width, Weight. | Must Have |
+| INV-REQ-012 | **Sheet-based parts** (Cutting, Slit+Cut) shall mandatorily display: Part Name, Width, Length, Available pieces. | Must Have |
+| INV-REQ-013 | **Slit-based parts** (Slitting) shall mandatorily display: Part Name, Width, Available pieces. | Must Have |
+| INV-REQ-014 | **Leftover Coil** parts shall mandatorily display: Part Name, Width, Available Weight. | Must Have |
 | INV-REQ-014B | The Parts List must group or display a 'Coil No.' column natively to allow users to quickly identify parent relations. No accordions will be utilized for this feature. | Must Have |
 
 #### 4.3.2 Acceptance Criteria
@@ -149,20 +149,21 @@ Invoice Lifecycle
 
 ---
 
-### US-INV-04: Material Selection — Pricing by Weight (Per MT) Only
+### US-INV-04: Material Selection — Manual Weight Entry
 
 **As a** Billing Admin,  
-**I want to** explicitly price all invoiced parts per MT (per metric ton), entering the number of pieces sold and allowing the system to back-calculate the invoiced weight based on unit weight,  
-**So that** I do not have to double-enter weights for uniformly cut/slit segments. *Note: "Price per Piece" billing is strictly Out of Scope for the initial release but is planned for future customer implementation [customer name: JGI].*
+**I want to** manually enter the gauged weight of the materials being dispatched and optionally record the number of pieces/slits,  
+**So that** I can invoice based on exact measured weight regardless of the theoretical unit weights.
 
 #### 4.4.1 Requirements
 
 | ID | Requirement | Priority |
 |---|---|---|
 | INV-REQ-015 | When a user checks the checkbox for a specific part in the flat table, an **expanded inline sub-row** is revealed with pricing parameters. | Must Have |
-| INV-REQ-016 | For physically discrete pieces (Slit-based and Sheet-based): The user shall input `No. of Pieces` and `Price per MT`. | Must Have |
-| INV-REQ-017 | Taking the inputted Pieces, the system auto-calculates Total Weight (`Pieces` × `Unit Weight of Part`) and renders it as read-only. | Must Have |
-| INV-REQ-018 | Line Total is calculated dynamically as `Auto-calculated Total Weight` × `Price per MT`. | Must Have |
+| INV-REQ-016 | For all parts: The user shall input `Weight (MT)` and `Price per MT` (Both mandatory). | Must Have |
+| INV-REQ-017 | The `No. of Pieces / Slits` field shall be available but optional (non-mandatory) for the user to document stock movements. | Must Have |
+| INV-REQ-018 | Line Total is calculated dynamically as `Weight (MT)` × `Price per MT`. | Must Have |
+| INV-REQ-019 | **Real-time Tracking**: The "Weight after invoice" in the top grid shall update instantly as the user types/edits weights in any line item. | Must Have |
 
 #### 4.4.2 Acceptance Criteria
 
@@ -272,7 +273,7 @@ Invoice Lifecycle
 | FR-INV-01 | Step-by-step creation wizard featuring Draft persistence. | Must Have |
 | FR-INV-02 | Coil Selection Step supporting searchable, filterable grid with lazy-loading payload logic. | Must Have |
 | FR-INV-03 | Coil details display separately in a master grid, while a flat layout holds billable line-items. | Must Have |
-| FR-INV-04 | Logic for handling discrete pieces (auto-calculating MT weight based on entered piece count). | Must Have |
+| FR-INV-04 | Logic for handling manual weight entry and optional piece counts. | Must Have |
 | FR-INV-05 | Logic treating Leftover scrap differently from cut parts (direct weight entry). | Must Have |
 | FR-INV-06 | Full mathematical waterfall (Line totals → Subtotal → Add. Charges → Tax → Grand Total). | Must Have |
 | FR-INV-07 | Linking UI shipping address to billing via singular checkbox. | Must Have |
@@ -287,16 +288,13 @@ Invoice Lifecycle
 When a slitting, cutting, or slit cut part is selected:
 
 ```javascript
-// Known constraints via parent inventory:
-per_piece_standard_weight_MT = batch_unit_weight // (e.g. 0.02 MT per sheet)
-
 // User Inputs:
-input_pieces = {user_value}
+input_weight_MT = {user_value}
 input_price_per_MT = {user_value}
+input_pieces = {user_value} (optional)
 
-// Auto Derived:
-derived_weight_to_invoice_MT = input_pieces × per_piece_standard_weight_MT
-line_total = derived_weight_to_invoice_MT × input_price_per_MT
+// Calculation:
+line_total = input_weight_MT × input_price_per_MT
 ```
 
 ### 6.2 Leftover Weight Calculation
@@ -369,8 +367,8 @@ Final_Grand_Total = Math.round(Raw_Grand_Total)
 |---|---|---|
 | `part_id` | UUID | Reference to specific stock / cut |
 | `is_leftover` | Boolean | Flags scrap vs finished sheet |
-| `billed_pieces` | Integer | User input (if not leftover) |
-| `billed_weight_MT` | Number | Auto-derived (or user input if leftover) |
+| `billed_pieces` | Integer | User input (Optional) |
+| `billed_weight_MT` | Number | User input (Mandatory) |
 | `unit_rate_MT` | Number | User input price per metric ton |
 | `line_total` | Number | Calculated result |
 
