@@ -540,3 +540,345 @@ export let SUPPLIER_RFQS = [
         ],
     },
 ];
+
+// ─── Trip Module Mock Data ──────────────────────────────────────────────────
+
+export const VEHICLE_REASSIGN_REASONS = [
+    'Vehicle Breakdown', 'Accident', 'Maintenance Required', 'Capacity Issue', 'Other'
+];
+
+export const DRIVER_REASSIGN_REASONS = [
+    'Health Issue', 'Personal Emergency', 'No Show', 'License Expired', 'Accident', 'Other'
+];
+
+export let TRIPS = [
+    {
+        id: 'TR-2024-001', status: 'Cancelled',
+        shipmentId: 'SH-2026-0001', customer: 'JSW Steel Ltd',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Rajesh Ramesh',
+        invoiceRef: 'INV-2025-001',
+        startTime: '20-11-2025 10:00', endTime: null,
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: null, by: null, done: false },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-002', status: 'Completed',
+        shipmentId: 'SH-2026-0003', customer: 'Jindal Steel',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Rajesh Ramesh',
+        invoiceRef: 'INV-2025-004',
+        startTime: '20-11-2025 10:00', endTime: '20-11-2025 18:30',
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: '20-11-2025 10:00', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: '20-11-2025 14:20', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-003', status: 'Scheduled',
+        shipmentId: 'SH-2026-0001', customer: 'JSW Steel Ltd',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Suresh Patil',
+        invoiceRef: 'INV-2025-001',
+        startTime: '20-11-2025 10:00', endTime: null,
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: null, by: null, done: false },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-004', status: 'Scheduled',
+        shipmentId: 'SH-2026-0001', customer: 'Tata Steel',
+        vehiclePlate: 'MH-04-CD-5678', driverName: 'Dinesh Kumar',
+        invoiceRef: 'INV-2025-002',
+        startTime: '20-11-2025 10:00', endTime: null,
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:00', by: 'Priya M', done: true },
+            { event: 'Vehicle Dispatched', date: null, by: null, done: false },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-005', status: 'In Progress',
+        shipmentId: 'SH-2026-0002', customer: 'SAIL',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Rajesh Ramesh',
+        invoiceRef: 'INV-2025-003',
+        startTime: '20-11-2025 10:00', endTime: null,
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: '28-11-2025 14:15', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: '02-12-2025 10:20', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-006', status: 'Cancelled',
+        shipmentId: 'SH-2026-0004', customer: 'Essar Steel',
+        vehiclePlate: 'MH-09-GH-3456', driverName: 'Dinesh Kumar',
+        invoiceRef: 'INV-2025-005',
+        startTime: '20-11-2025 10:00', endTime: null,
+        createdDate: '20-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '20-11-2025 09:30', by: 'Ravi K', done: true },
+            { event: 'Cancelled', date: '20-11-2025 11:00', by: 'Ravi K', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-007', status: 'Completed',
+        shipmentId: 'SH-2026-0003', customer: 'Jindal Steel',
+        vehiclePlate: 'MH-04-CD-5678', driverName: 'Suresh Patil',
+        invoiceRef: 'INV-2025-004',
+        startTime: '19-11-2025 09:00', endTime: '19-11-2025 16:45',
+        createdDate: '19-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '19-11-2025 07:00', by: 'Priya M', done: true },
+            { event: 'Vehicle Dispatched', date: '19-11-2025 09:00', by: 'Priya M', done: true },
+            { event: 'Location Update: En Route', date: '19-11-2025 12:30', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-008', status: 'In Progress',
+        shipmentId: 'SH-2026-0001', customer: 'JSW Steel Ltd',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Rajesh Ramesh',
+        invoiceRef: 'INV-2025-001',
+        startTime: '21-11-2025 08:30', endTime: null,
+        createdDate: '21-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '21-11-2025 08:00', by: 'Ravi K', done: true },
+            { event: 'Vehicle Dispatched', date: '21-11-2025 08:30', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-009', status: 'Completed',
+        shipmentId: 'SH-2026-0003', customer: 'Tata Steel',
+        vehiclePlate: 'MH-09-GH-3456', driverName: 'Dinesh Kumar',
+        invoiceRef: 'INV-2025-002',
+        startTime: '18-11-2025 07:00', endTime: '18-11-2025 15:00',
+        createdDate: '18-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '18-11-2025 06:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: '18-11-2025 07:00', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: '18-11-2025 11:00', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-010', status: 'Cancelled',
+        shipmentId: 'SH-2026-0004', customer: 'Essar Steel',
+        vehiclePlate: 'MH-04-CD-5678', driverName: 'Suresh Patil',
+        invoiceRef: 'INV-2025-005',
+        startTime: '17-11-2025 10:00', endTime: null,
+        createdDate: '17-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '17-11-2025 09:00', by: 'Priya M', done: true },
+            { event: 'Cancelled', date: '17-11-2025 12:00', by: 'Priya M', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-011', status: 'In Progress',
+        shipmentId: 'SH-2026-0002', customer: 'SAIL',
+        vehiclePlate: 'MH-09-GH-3456', driverName: 'Dinesh Kumar',
+        invoiceRef: 'INV-2025-003',
+        startTime: '22-11-2025 06:00', endTime: null,
+        createdDate: '22-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '22-11-2025 05:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: '22-11-2025 06:00', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: '22-11-2025 10:15', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-012', status: 'Scheduled',
+        shipmentId: 'SH-2026-0005', customer: 'Tata Steel',
+        vehiclePlate: 'MH-04-CD-5678', driverName: 'Suresh Patil',
+        invoiceRef: 'INV-2025-002',
+        startTime: '23-11-2025 08:00', endTime: null,
+        createdDate: '23-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '23-11-2025 07:30', by: 'Ravi K', done: true },
+            { event: 'Vehicle Dispatched', date: null, by: null, done: false },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-013', status: 'Completed',
+        shipmentId: 'SH-2026-0001', customer: 'JSW Steel Ltd',
+        vehiclePlate: 'MH-17-AB-1234', driverName: 'Rajesh Ramesh',
+        invoiceRef: 'INV-2025-001',
+        startTime: '16-11-2025 09:00', endTime: '16-11-2025 17:30',
+        createdDate: '16-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '16-11-2025 08:00', by: 'Priya M', done: true },
+            { event: 'Vehicle Dispatched', date: '16-11-2025 09:00', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: '16-11-2025 13:00', by: 'System', done: true },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-014', status: 'In Progress',
+        shipmentId: 'SH-2026-0002', customer: 'Meenakshi Steel',
+        vehiclePlate: 'MH-04-CD-5678', driverName: 'Suresh Patil',
+        invoiceRef: 'INV-2025-003',
+        startTime: '22-11-2025 14:00', endTime: null,
+        createdDate: '22-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '22-11-2025 13:00', by: 'Ravi K', done: true },
+            { event: 'Vehicle Dispatched', date: '22-11-2025 14:00', by: 'System', done: true },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+    {
+        id: 'TR-2024-015', status: 'Scheduled',
+        shipmentId: 'SH-2026-0005', customer: 'ABC Steel Ltd',
+        vehiclePlate: 'MH-09-GH-3456', driverName: 'Dinesh Kumar',
+        invoiceRef: 'INV-2025-005',
+        startTime: '24-11-2025 07:00', endTime: null,
+        createdDate: '24-11-2025',
+        timeline: [
+            { event: 'Transit Entry Created', date: '24-11-2025 06:30', by: 'John Doe', done: true },
+            { event: 'Vehicle Dispatched', date: null, by: null, done: false },
+            { event: 'Location Update: En Route', date: null, by: null, done: false },
+        ],
+        reassignments: []
+    },
+];
+
+// ─── Machine Management Mock Data ─────────────────────────────────────────────
+
+export let MACHINES_DATA = [
+    {
+        id: 'SLT-01', name: 'Primary Slitter', type: 'Slitting Machine',
+        modelNumber: 'SLT-1000X', serialNumber: 'SN-2022-001',
+        productionLine: 'Slitting Line A', status: 'Active',
+        nextMaintenanceDate: '28-11-2025'
+    },
+    {
+        id: 'SLT-02', name: 'Secondary Slitter', type: 'Slitting Machine',
+        modelNumber: 'SLT-800Y', serialNumber: 'SN-2021-045',
+        productionLine: 'Slitting Line B', status: 'Under Breakdown',
+        nextMaintenanceDate: '15-12-2025'
+    },
+    {
+        id: 'CUT-01', name: 'Heavy Duty Cutter', type: 'Cutting Machine',
+        modelNumber: 'CUT-HD-500', serialNumber: 'SN-2023-012',
+        productionLine: 'Cutting Line A', status: 'Under Preventive Maintenance',
+        nextMaintenanceDate: '24-02-2026'
+    },
+    {
+        id: 'CUT-02', name: 'Precision Cutter', type: 'Cutting Machine',
+        modelNumber: 'CUT-PR-200', serialNumber: 'SN-2020-088',
+        productionLine: 'Cutting Line B', status: 'Active',
+        nextMaintenanceDate: '10-03-2026'
+    },
+];
+
+export let BREAKDOWN_RECORDS = [
+    {
+        id: 'BRK-2026-001', machineId: 'SLT-02', machineName: 'Secondary Slitter',
+        startTime: '23-02-2026 14:30', reportedBy: 'Ravi K', priority: 'High',
+        reason: 'Hydraulic leak', symptoms: 'Pressure dropping during operation.',
+        immediateActions: 'Stopped machine and closed main valve.',
+        affectedWorkOrder: 'WO-2024-003', status: 'Open'
+    },
+    {
+        id: 'BRK-2026-002', machineId: 'SLT-01', machineName: 'Primary Slitter',
+        startTime: '10-01-2026 09:00', reportedBy: 'Priya M', priority: 'Medium',
+        reason: 'Blade dullness', symptoms: 'Burrs on slit edges.',
+        immediateActions: 'Replaced blade set.',
+        affectedWorkOrder: null, status: 'Closed' // Has a corresponding maintenance record
+    }
+];
+
+export let MAINTENANCE_RECORDS = [
+    {
+        id: 'MNT-2026-001', machineId: 'CUT-01', type: 'Preventive',
+        technician: 'Ramesh Singh', scheduledDate: '24-02-2026', scheduleTime: '08:00',
+        estimatedDuration: '4 hours', estimatedCost: 5000, status: 'Completed', breakdownId: null
+    },
+    {
+        id: 'MNT-2026-002', machineId: 'SLT-01', type: 'Corrective',
+        technician: 'Suresh Kumar', scheduledDate: '10-01-2026', scheduleTime: '10:00',
+        estimatedDuration: '2 hours', estimatedCost: 15000, status: 'Completed', breakdownId: 'BRK-2026-002'
+    }
+];
+
+// Helper functions for Machine Management state transitions
+export function reportBreakdown(record) {
+    const machine = MACHINES_DATA.find(m => m.id === record.machineId);
+    if (!machine || machine.status !== 'Active') {
+        throw new Error('Machine must be in Active state to report a breakdown.');
+    }
+    const openBreakdown = BREAKDOWN_RECORDS.find(br => br.machineId === record.machineId && br.status !== 'Closed');
+    if (openBreakdown) {
+        throw new Error('An open breakdown already exists for this machine.');
+    }
+
+    // Create new breakdown
+    const newRecord = { ...record, status: 'Open', id: 'BRK-' + Date.now() };
+    BREAKDOWN_RECORDS.unshift(newRecord);
+
+    // Update machine state
+    machine.status = 'Under Breakdown';
+    return newRecord;
+}
+
+export function scheduleMaintenance(record) {
+    const machine = MACHINES_DATA.find(m => m.id === record.machineId);
+    if (!machine) throw new Error('Machine not found.');
+
+    if (record.type === 'Preventive') {
+        if (machine.status !== 'Active') {
+            throw new Error('Machine must be Active to schedule preventive maintenance.');
+        }
+    } else if (record.type === 'Corrective') {
+        const breakdown = BREAKDOWN_RECORDS.find(br => br.id === record.breakdownId);
+        if (!breakdown || (breakdown.status !== 'Open' && breakdown.status !== 'In Repair')) {
+            throw new Error('Valid Open breakdown required for corrective maintenance.');
+        }
+    }
+
+    const newMaintenance = { ...record, status: 'Scheduled', id: 'MNT-' + Date.now() };
+    MAINTENANCE_RECORDS.unshift(newMaintenance);
+    return newMaintenance;
+}
+
+export function executeMaintenanceStateChange(maintenanceId, action) {
+    const maintenance = MAINTENANCE_RECORDS.find(m => m.id === maintenanceId);
+    if (!maintenance) return;
+    const machine = MACHINES_DATA.find(m => m.id === maintenance.machineId);
+
+    if (action === 'Start') {
+        maintenance.status = 'In Progress';
+        machine.status = maintenance.type === 'Preventive' ? 'Under Preventive Maintenance' : 'Under Corrective Maintenance';
+        if (maintenance.type === 'Corrective' && maintenance.breakdownId) {
+            const breakdown = BREAKDOWN_RECORDS.find(b => b.id === maintenance.breakdownId);
+            if (breakdown) breakdown.status = 'In Repair';
+        }
+    } else if (action === 'Complete') {
+        maintenance.status = 'Completed';
+        machine.status = 'Active';
+        if (maintenance.type === 'Corrective' && maintenance.breakdownId) {
+            const breakdown = BREAKDOWN_RECORDS.find(b => b.id === maintenance.breakdownId);
+            if (breakdown) breakdown.status = 'Closed';
+        }
+    }
+}

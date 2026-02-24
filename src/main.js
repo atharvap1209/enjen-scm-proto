@@ -3,7 +3,10 @@ import { renderWorkOrders } from './pages/work-orders.js';
 import { renderProductionProcess } from './pages/production-process.js';
 import { renderInvoice } from './pages/invoice.js';
 import { renderShipment } from './pages/shipment.js';
+import { renderTrip } from './pages/trip.js';
 import { renderSupplierPortal } from './pages/supplier-portal.js';
+import { renderStockScreener } from './pages/stock-screener.js';
+import { renderMachineManagement } from './pages/machine-management.js';
 
 // ─── Navigation ───
 const sidebar = document.getElementById('sidebar');
@@ -48,6 +51,30 @@ if (drawerSupplierPortal) {
         if (!e.target.closest('[data-route]')) {
             drawerSupplierPortal.classList.toggle('nav-drawer__item--expanded');
             const chevron = drawerSupplierPortal.querySelector('.nav-drawer__chevron');
+            if (chevron) chevron.classList.toggle('nav-drawer__chevron--up');
+        }
+    });
+}
+
+// Toggle Logistics sub-list in nav drawer
+const drawerLogistics = document.getElementById('drawerLogistics');
+if (drawerLogistics) {
+    drawerLogistics.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-route]')) {
+            drawerLogistics.classList.toggle('nav-drawer__item--expanded');
+            const chevron = drawerLogistics.querySelector('.nav-drawer__chevron');
+            if (chevron) chevron.classList.toggle('nav-drawer__chevron--up');
+        }
+    });
+}
+
+// Toggle Inventory sub-list in nav drawer
+const drawerInventory = document.getElementById('drawerInventory');
+if (drawerInventory) {
+    drawerInventory.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-route]')) {
+            drawerInventory.classList.toggle('nav-drawer__item--expanded');
+            const chevron = drawerInventory.querySelector('.nav-drawer__chevron');
             if (chevron) chevron.classList.toggle('nav-drawer__chevron--up');
         }
     });
@@ -128,8 +155,14 @@ function route() {
         renderInvoice(mainContent);
     } else if (hash.startsWith('#/shipment')) {
         renderShipment(mainContent);
+    } else if (hash.startsWith('#/trip')) {
+        renderTrip(mainContent);
     } else if (hash.startsWith('#/supplier-portal')) {
         renderSupplierPortal(mainContent);
+    } else if (hash.startsWith('#/stock-screener')) {
+        renderStockScreener(mainContent);
+    } else if (hash.startsWith('#/machine-management')) {
+        renderMachineManagement(mainContent);
     } else {
         renderWorkOrders(mainContent);
     }
